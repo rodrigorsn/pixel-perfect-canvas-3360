@@ -281,7 +281,10 @@ export function useProject() {
       const index = features.findIndex((f) => f.slug === slug);
       const target = index + delta;
       if (index === -1 || target < 0 || target >= features.length) return p;
-      [features[index], features[target]] = [features[target], features[index]];
+      const a = features[index]!;
+      const b = features[target]!;
+      features[index] = b;
+      features[target] = a;
       return { ...p, features };
     });
   }, []);
