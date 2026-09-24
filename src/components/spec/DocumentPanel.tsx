@@ -348,33 +348,66 @@ function ItemList({
         </p>
       )}
       <ul className="flex flex-col gap-1">
-        {project.features.map((feature, index) => (
-          <li key={feature.slug} className="flex items-center gap-1 rounded-md ring-1 ring-line/50">
-            <button
-              type="button"
-              onClick={() => onSelect(feature.slug)}
-              className="flex-1 rounded-md px-2 py-2 text-left text-[12px] hover:bg-ink/5"
-            >
-              <span className="font-mono text-[10px] text-accent">
-                {String(index + 1).padStart(3, "0")}-{feature.slug}
-              </span>
-              <span className="block">{feature.name}</span>
-            </button>
-            {stage.id === "features" && (
-              <div className="flex flex-none items-center gap-0.5 pr-1">
-                <button type="button" onClick={() => onFeatureMove(feature.slug, -1)} className="rounded p-1 text-muted-foreground hover:bg-ink/5">
-                  <ArrowUp className="size-3" />
+        {project.features.map((feature, index) => {
+          const isOpen = stage.id === "telas" && expanded.has(feature.slug);
+          return (
+            <li key={feature.slug} className={cn("rounded-md ring-1 ring-line/50", isOpen && "flex flex-col")}>
+              <div className="flex items-center gap-1">
+                {stage.id === "telas" && (
+                  <button
+                    type="button"
+                    title={isOpen ? "Recolher" : "Expandir"}
+                    onClick={() => onToggleTask(feature.slug)}
+                    className="flex-none rounded p-1.5 text-muted-foreground hover:bg-ink/5"
+                  >
+                    {isOpen ? <ChevronDown className="size-3.5" /> : <ChevronRight className="size-3.5" />}
+                  </button>
+                )}
+                <button
+                  type="button"
+                  onClick={() => onSelect(feature.slug)}
+                  className="min-w-0 flex-1 rounded-md px-1 py-2 text-left text-[12px] hover:bg-ink/5"
+                >
+                  <span className="font-mono text-[10px] text-accent">
+                    {String(index + 1).padStart(3, "0")}-{feature.slug}
+                  </span>
+                  <span className="block">{feature.name}</span>
+                  {stage.id === "telas" && (
+                    <span className="block font-mono text-[10px] text-muted-foreground">
+                      {feature.pages.length
+                        ? `${feature.pages.length} ${feature.pages.length === 1 ? "página" : "páginas"}`
+                        : "sem páginas"}
+                    </span>
+                  )}
                 </button>
-                <button type="button" onClick={() => onFeatureMove(feature.slug, 1)} className="rounded p-1 text-muted-foreground hover:bg-ink/5">
-                  <ArrowDown className="size-3" />
-                </button>
-                <button type="button" onClick={() => onFeatureRemove(feature.slug)} className="rounded p-1 text-muted-foreground hover:bg-ink/5">
-                  <Trash2 className="size-3" />
-                </button>
+                {stage.id === "features" && (
+                  <div className="flex flex-none items-center gap-0.5 pr-1">
+                    <button type="button" onClick={() => onFeatureMove(feature.slug, -1)} className="rounded p-1 text-muted-foreground hover:bg-ink/5">
+                      <ArrowUp className="size-3" />
+                    </button>
+                    <button type="button" onClick={() => onFeatureMove(feature.slug, 1)} className="rounded p-1 text-muted-foreground hover:bg-ink/5">
+                      <ArrowDown className="size-3" />
+                    </button>
+                    <button type="button" onClick={() => onFeatureRemove(feature.slug)} className="rounded p-1 text-muted-foreground hover:bg-ink/5">
+                      <Trash2 className="size-3" />
+                    </button>
+                  </div>
+                )}
               </div>
-            )}
-          </li>
-        ))}
+              {isOpen && (
+                <div className="border-t border-line/40 px-3 py-2">
+                  {feature.telas ? (
+                    <Markdown content={feature.telas} />
+                  ) : (
+                    <p className="font-mono text-[11px] text-muted-foreground">
+                      Nenhuma página ainda. Clique em “Gerar documento”.
+                    </p>
+                  )}
+                </div>
+              )}
+            </li>
+          );
+        })}
       </ul>
 
       {stage.id === "features" && (
