@@ -95,7 +95,7 @@ export function useProject() {
         });
         patchStage(stageId, { doc: res.text, stale: false });
       } else if (stageId === "arquitetura") {
-        const res = (await callJson({
+        const res = parseJson(await callJson({
           data: {
             kind: "arquitetura",
             system: docSystem(project, stageId),
@@ -108,7 +108,7 @@ export function useProject() {
           stages: { ...p.stages, [stageId]: { ...p.stages[stageId], doc: res.doc, stale: false } },
         }));
       } else if (stageId === "features") {
-        const res = (await callJson({
+        const res = parseJson(await callJson({
           data: {
             kind: "features",
             system: docSystem(project, stageId),
@@ -162,7 +162,7 @@ export function useProject() {
           const feature = features[i];
           if (!feature) continue;
           setBusy(`Gerando telas de ${feature.name} (${i + 1}/${features.length})…`);
-          const res = (await callJson({
+          const res = parseJson(await callJson({
             data: {
               kind: "telas",
               system: docSystem(project, stageId),
@@ -187,7 +187,7 @@ export function useProject() {
           if (!feature) continue;
           setBusy(`Gerando tarefas de ${feature.name} (${i + 1}/${project.features.length})…`);
           const folder = `${String(i + 1).padStart(3, "0")}-${feature.slug}`;
-          const res = (await callJson({
+          const res = parseJson(await callJson({
             data: {
               kind: "tasks",
               system: docSystem(project, stageId),
@@ -359,6 +359,8 @@ export function useProject() {
     toggleVerification,
   };
 }
+
+const parseJson = (r: { json: string }): unknown => JSON.parse(r.json);
 
 function errorMessage(error: unknown) {
   const raw = error instanceof Error ? error.message : String(error);
