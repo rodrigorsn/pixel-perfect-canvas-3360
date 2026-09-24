@@ -32,7 +32,14 @@ export function loadProject(): Project | null {
     if (!raw) return null;
     const parsed = JSON.parse(raw) as Project;
     if (!parsed?.stages) return null;
-    return parsed;
+    return {
+      ...parsed,
+      tasks: (parsed.tasks ?? []).map((t) => ({
+        ...t,
+        kind: t.kind === "prototype" ? "prototype" : "functional",
+        dependsOn: Array.isArray(t.dependsOn) ? t.dependsOn : [],
+      })),
+    };
   } catch {
     return null;
   }
