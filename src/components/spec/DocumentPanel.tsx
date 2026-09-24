@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { ArrowLeft, ArrowDown, ArrowUp, Loader2, Plus, Trash2 } from "lucide-react";
+import { ArrowLeft, ArrowDown, ArrowUp, ChevronDown, ChevronRight, Loader2, Plus, Trash2, UnfoldVertical, FoldVertical } from "lucide-react";
 import { Markdown } from "./Markdown";
 import { TelasEditor } from "./TelasEditor";
 import type { StageDef } from "@/lib/spec/stages";
@@ -31,11 +31,22 @@ export function DocumentPanel(props: Props) {
   const [tab, setTab] = useState<Tab>("preview");
   const [selected, setSelected] = useState<string | null>(null);
   const [newFeature, setNewFeature] = useState("");
+  const [expanded, setExpanded] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     setSelected(null);
     setTab("preview");
+    setExpanded(new Set());
   }, [stage.id]);
+
+  const toggleTask = (code: string) => {
+    setExpanded((prev) => {
+      const next = new Set(prev);
+      if (next.has(code)) next.delete(code);
+      else next.add(code);
+      return next;
+    });
+  };
 
   const isMulti = stage.multi;
   const approved = state.status === "concluida";
@@ -96,7 +107,27 @@ export function DocumentPanel(props: Props) {
             {value === "preview" ? "Prévia" : "Editar"}
           </button>
         ))}
-        <span className="ml-auto font-mono text-[10px] text-muted-foreground">{stage.docPath}</span>
+        {stage.id === "tarefas" && !current && project.tasks.length > 0 && (
+          <span className="ml-auto flex items-center gap-1">
+            <button
+              type="button"
+              title="Expandir todas"
+              onClick={() => setExpanded(new Set(project.tasks.map((t) => t.code)))}
+              className="flex items-center gap-1 rounded-md px-2 py-1 text-[11px] font-medium text-muted-foreground ring-1 ring-line/60 hover:bg-ink/5"
+            >
+              <UnfoldVertical className="size-3" /> Expandir
+            </button>
+            <button
+              type="button"
+              title="Recolher todas"
+              onClick={() => setExpanded(new Set())}
+              className="flex items-center gap-1 rounded-md px-2 py-1 text-[11px] font-medium text-muted-foreground ring-1 ring-line/60 hover:bg-ink/5"
+            >
+              <FoldVertical className="size-3" /> Recolher
+            </button>
+          </span>
+        )}
+        <span className={cn("font-mono text-[10px] text-muted-foreground", stage.id === "tarefas" && !current && project.tasks.length > 0 ? "" : "ml-auto")}>{stage.docPath}</span>
       </div>
 
       <div className="min-h-0 flex-1 overflow-y-auto p-4">
@@ -126,6 +157,8 @@ export function DocumentPanel(props: Props) {
             onFeatureAdd={props.onFeatureAdd}
             busy={busy}
             onRegenerateFeatureTasks={props.onRegenerateFeatureTasks}
+            expanded={expanded}
+            onToggleTask={toggleTask}
           />
         ) : tab === "editar" ? (
           <textarea
@@ -219,6 +252,8 @@ function ItemList({
   onFeatureAdd,
   busy,
   onRegenerateFeatureTasks,
+  expanded,
+  onToggleTask,
 }: {
   stage: StageDef;
   project: Project;
@@ -230,6 +265,8 @@ function ItemList({
   onFeatureAdd: (name: string) => void;
   busy: string | null;
   onRegenerateFeatureTasks: (slug: string) => void;
+  expanded: Set<string>;
+  onToggleTask: (code: string) => void;
 }) {
   if (stage.id === "tarefas") {
     if (!project.tasks.length) {
@@ -255,22 +292,40 @@ function ItemList({
                 </button>
               </div>
               <ul className="flex flex-col gap-1">
-                {tasks.map((task) => (
-                  <li key={task.code}>
-                    <button
-                      type="button"
-                      onClick={() => onSelect(task.code)}
-                      className="w-full rounded-md px-2 py-2 text-left text-[12px] ring-1 ring-line/50 hover:bg-ink/5"
-                    >
-                      <span className="font-mono text-[10px] text-accent">{task.code}</span>{" "}
-                      <span>{task.title}</span>
-                      <span className="mt-0.5 block font-mono text-[10px] text-muted-foreground">
-                        {task.kind === "prototype" ? "protótipo" : "funcional"}
-                        {task.dependsOn.length ? ` · depende de ${task.dependsOn.join(", ")}` : ""}
-                      </span>
-                    </button>
-                  </li>
-                ))}
+                {tasks.map((task) => {
+                  const isOpen = expanded.has(task.code);
+                  return (
+                    <li key={task.code} className="rounded-md ring-1 ring-line/50">
+                      <div className="flex items-center gap-1">
+                        <button
+                          type="button"
+                          title={isOpen ? "Recolher" : "Expandir"}
+                          onClick={() => onToggleTask(task.code)}
+                          className="flex-none rounded p-1.5 text-muted-foreground hover:bg-ink/5"
+                        >
+                          {isOpen ? <ChevronDown className="size-3.5" /> : <ChevronRight className="size-3.5" />}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => onSelect(task.code)}
+                          className="min-w-0 flex-1 rounded-md px-1 py-2 text-left text-[12px] hover:bg-ink/5"
+                        >
+                          <span className="font-mono text-[10px] text-accent">{task.code}</span>{" "}
+                          <span>{task.title}</span>
+                          <span className="mt-0.5 block font-mono text-[10px] text-muted-foreground">
+                            {task.kind === "prototype" ? "protótipo" : "funcional"}
+                            {task.dependsOn.length ? ` · depende de ${task.dependsOn.join(", ")}` : ""}
+                          </span>
+                        </button>
+                      </div>
+                      {isOpen && (
+                        <div className="border-t border-line/40 px-3 py-2">
+                          <Markdown content={task.markdown} />
+                        </div>
+                      )}
+                    </li>
+                  );
+                })}
               </ul>
             </div>
           );
