@@ -9,6 +9,7 @@ interface Props {
   state: StageState;
   busy: string | null;
   onSend: (text: string) => void;
+  onGenerate: () => void;
 }
 
 function splitSuggestion(content: string) {
@@ -18,7 +19,11 @@ function splitSuggestion(content: string) {
   return { body: content.slice(0, match.index).trim(), suggestion: hint.trim() };
 }
 
-export function ChatPanel({ stage, state, busy, onSend }: Props) {
+const READY_RE = /pronto para gerar o documento/i;
+const GENERATE_INTENT_RE =
+  /^(?:ok[,!.\s]*)?(?:pode\s+)?(?:gerar|gera|gere|seguir|segue|siga|avan[çc]ar|avan[çc]a|avance|prosseguir)(?:\s+(?:o\s+)?(?:documento|doc))?(?:\s+agora)?[\s.!]*$|^gerar\s+documento/i;
+
+export function ChatPanel({ stage, state, busy, onSend, onGenerate }: Props) {
   const [draft, setDraft] = useState("");
   const endRef = useRef<HTMLDivElement>(null);
 
@@ -28,11 +33,16 @@ export function ChatPanel({ stage, state, busy, onSend }: Props) {
 
   const last = state.messages[state.messages.length - 1];
   const suggestion = last?.role === "assistant" ? splitSuggestion(last.content).suggestion : null;
+  const ready = last?.role === "assistant" && READY_RE.test(last.content);
 
   const send = (text: string) => {
     const value = text.trim();
     if (!value || busy) return;
     setDraft("");
+    if (GENERATE_INTENT_RE.test(value.normalize("NFC"))) {
+      onGenerate();
+      return;
+    }
     onSend(value);
   };
 
@@ -76,6 +86,16 @@ export function ChatPanel({ stage, state, busy, onSend }: Props) {
             </div>
           );
         })}
+
+        {ready && !busy && (
+          <button
+            type="button"
+            onClick={onGenerate}
+            className="self-start rounded-md bg-accent px-3 py-1.5 text-[12px] font-medium text-accent-foreground"
+          >
+            Gerar documento agora
+          </button>
+        )}
 
         {busy && (
           <div className="flex items-center gap-2 font-mono text-[11px] text-muted-foreground">

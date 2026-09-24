@@ -120,7 +120,7 @@ function Studio() {
             onRebuild={app.buildVerification}
           />
         ) : (
-          <ChatPanel stage={stage} state={state} busy={app.busy} onSend={app.sendMessage} />
+          <ChatPanel stage={stage} state={state} busy={app.busy} onSend={app.sendMessage} onGenerate={app.generateDoc} />
         )}
 
         <DocumentPanel
