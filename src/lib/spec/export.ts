@@ -55,14 +55,9 @@ Siga integralmente as regras definidas em AGENTS.md na raiz do repositório.
 
 **Etapa atual:** ${currentStage}
 
-## Tarefas
-${
-  project.tasks.length
-    ? project.tasks
-        .map((t) => `- [${t.done ? "x" : " "}] ${t.code} — ${t.title} (${t.featureSlug})`)
-        .join("\n")
-    : "- [ ] Nenhuma tarefa gerada"
-}
+${statusSection("## Leva 1 — Protótipo visual", project.tasks.filter((t) => t.kind === "prototype"))}
+
+${statusSection("## Leva 2 — Funcional", project.tasks.filter((t) => t.kind !== "prototype"))}
 `;
 
   if (project.stages.brainstorm.doc) files["docs/00-brainstorm.md"] = project.stages.brainstorm.doc;
@@ -169,4 +164,11 @@ export function acceptanceCriteria(markdown: string) {
     .split("\n")
     .map((line) => line.match(/^\s*-\s*\[[ xX]\]\s*(.+)$/)?.[1]?.trim())
     .filter((v): v is string => Boolean(v));
+}
+
+function statusSection(heading: string, tasks: Project["tasks"]) {
+  const lines = tasks.length
+    ? tasks.map((t) => `- [${t.done ? "x" : " "}] ${t.code} — ${t.title} (${t.featureSlug})`).join("\n")
+    : "- [ ] Nenhuma tarefa gerada";
+  return `${heading}\n${lines}`;
 }

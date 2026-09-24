@@ -43,7 +43,11 @@ export interface Task {
   title: string;
   markdown: string;
   done: boolean;
+  kind: TaskKind;
+  dependsOn: string[];
 }
+
+export type TaskKind = "prototype" | "functional";
 
 export interface VerificationItem {
   id: string;

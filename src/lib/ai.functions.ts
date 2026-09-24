@@ -40,9 +40,16 @@ const schemas = {
   tasks: z.object({
     tasks: z.array(
       z.object({
-        code: z.string(),
         title: z.string(),
-        markdown: z.string(),
+        kind: z.enum(["prototype", "functional"]),
+        dependsOn: z.array(z.string()),
+        objective: z.string(),
+        files: z.array(z.string()),
+        refs: z.array(z.string()),
+        actions: z.array(z.object({ action: z.string(), expectedResult: z.string() })),
+        acceptanceCriteria: z.array(z.string()),
+        howToVerify: z.string(),
+        outOfScope: z.string(),
       }),
     ),
   }),
