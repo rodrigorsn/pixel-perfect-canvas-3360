@@ -82,5 +82,5 @@ export const aiJson = createServerFn({ method: "POST" })
       output: Output.object({ schema }),
       providerOptions: RESPONSES_OPTIONS,
     });
-    return (await result.output) as Record<string, unknown>;
+    return { json: JSON.stringify(await result.output) };
   });
