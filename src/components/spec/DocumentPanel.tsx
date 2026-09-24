@@ -107,7 +107,27 @@ export function DocumentPanel(props: Props) {
             {value === "preview" ? "Prévia" : "Editar"}
           </button>
         ))}
-        <span className="ml-auto font-mono text-[10px] text-muted-foreground">{stage.docPath}</span>
+        {stage.id === "tarefas" && !current && project.tasks.length > 0 && (
+          <span className="ml-auto flex items-center gap-1">
+            <button
+              type="button"
+              title="Expandir todas"
+              onClick={() => setExpanded(new Set(project.tasks.map((t) => t.code)))}
+              className="flex items-center gap-1 rounded-md px-2 py-1 text-[11px] font-medium text-muted-foreground ring-1 ring-line/60 hover:bg-ink/5"
+            >
+              <UnfoldVertical className="size-3" /> Expandir
+            </button>
+            <button
+              type="button"
+              title="Recolher todas"
+              onClick={() => setExpanded(new Set())}
+              className="flex items-center gap-1 rounded-md px-2 py-1 text-[11px] font-medium text-muted-foreground ring-1 ring-line/60 hover:bg-ink/5"
+            >
+              <FoldVertical className="size-3" /> Recolher
+            </button>
+          </span>
+        )}
+        <span className={cn("font-mono text-[10px] text-muted-foreground", stage.id === "tarefas" && !current && project.tasks.length > 0 ? "" : "ml-auto")}>{stage.docPath}</span>
       </div>
 
       <div className="min-h-0 flex-1 overflow-y-auto p-4">
@@ -137,6 +157,8 @@ export function DocumentPanel(props: Props) {
             onFeatureAdd={props.onFeatureAdd}
             busy={busy}
             onRegenerateFeatureTasks={props.onRegenerateFeatureTasks}
+            expanded={expanded}
+            onToggleTask={toggleTask}
           />
         ) : tab === "editar" ? (
           <textarea
