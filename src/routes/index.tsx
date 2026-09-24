@@ -126,22 +126,34 @@ function Studio() {
           progress={app.progress}
         />
 
-        {app.activeStage === "implementacao" ? (
-          <ImplementationPanel
-            tasks={app.project.tasks}
-            onToggle={(code, done) => app.updateTask(code, { done })}
-            onImport={app.importStatus}
-          />
-        ) : app.activeStage === "verificacao" ? (
-          <VerificationPanel
-            project={app.project}
-            items={app.project.verification}
-            onToggle={app.toggleVerification}
-            onRebuild={app.buildVerification}
-          />
-        ) : (
-          <ChatPanel stage={stage} state={state} busy={app.busy} onSend={app.sendMessage} onGenerate={app.generateDoc} />
-        )}
+        <div className="flex min-h-0 flex-none flex-col" style={{ width: chatWidth }}>
+          {app.activeStage === "implementacao" ? (
+            <ImplementationPanel
+              tasks={app.project.tasks}
+              onToggle={(code, done) => app.updateTask(code, { done })}
+              onImport={app.importStatus}
+            />
+          ) : app.activeStage === "verificacao" ? (
+            <VerificationPanel
+              project={app.project}
+              items={app.project.verification}
+              onToggle={app.toggleVerification}
+              onRebuild={app.buildVerification}
+            />
+          ) : (
+            <ChatPanel stage={stage} state={state} busy={app.busy} onSend={app.sendMessage} onGenerate={app.generateDoc} />
+          )}
+        </div>
+
+        <div
+          role="separator"
+          aria-orientation="vertical"
+          title="Arraste para redimensionar"
+          onPointerDown={onHandlePointerDown}
+          className="group flex w-2 flex-none cursor-col-resize items-center justify-center"
+        >
+          <div className="h-10 w-[3px] rounded-full bg-line/60 transition-colors group-hover:bg-accent group-active:bg-accent" />
+        </div>
 
         <DocumentPanel
           stage={stage}
