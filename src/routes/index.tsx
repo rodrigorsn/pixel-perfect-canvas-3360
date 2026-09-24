@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useCallback, useMemo, useRef, useState, type PointerEvent as ReactPointerEvent } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { Package, RotateCcw } from "lucide-react";
 import { ChatPanel } from "@/components/spec/ChatPanel";
@@ -38,6 +38,26 @@ function Studio() {
   const stage = stageById(app.activeStage);
   const rawState = app.project.stages[app.activeStage];
   const canExport = app.project.stages.tarefas.status === "concluida";
+  const [chatWidth, setChatWidth] = useState(480);
+  const dragRef = useRef<{ startX: number; startWidth: number } | null>(null);
+
+  const onHandlePointerDown = useCallback((event: ReactPointerEvent<HTMLDivElement>) => {
+    event.preventDefault();
+    dragRef.current = { startX: event.clientX, startWidth: chatWidth };
+    const onMove = (move: PointerEvent) => {
+      const start = dragRef.current;
+      if (!start) return;
+      const next = start.startWidth + (move.clientX - start.startX);
+      setChatWidth(Math.min(760, Math.max(320, next)));
+    };
+    const onUp = () => {
+      dragRef.current = null;
+      window.removeEventListener("pointermove", onMove);
+      window.removeEventListener("pointerup", onUp);
+    };
+    window.addEventListener("pointermove", onMove);
+    window.addEventListener("pointerup", onUp);
+  }, [chatWidth]);
 
   const state = useMemo(() => {
     if (app.activeStage === "implementacao") {
@@ -106,22 +126,34 @@ function Studio() {
           progress={app.progress}
         />
 
-        {app.activeStage === "implementacao" ? (
-          <ImplementationPanel
-            tasks={app.project.tasks}
-            onToggle={(code, done) => app.updateTask(code, { done })}
-            onImport={app.importStatus}
-          />
-        ) : app.activeStage === "verificacao" ? (
-          <VerificationPanel
-            project={app.project}
-            items={app.project.verification}
-            onToggle={app.toggleVerification}
-            onRebuild={app.buildVerification}
-          />
-        ) : (
-          <ChatPanel stage={stage} state={state} busy={app.busy} onSend={app.sendMessage} onGenerate={app.generateDoc} />
-        )}
+        <div className="flex min-h-0 flex-none flex-col" style={{ width: chatWidth }}>
+          {app.activeStage === "implementacao" ? (
+            <ImplementationPanel
+              tasks={app.project.tasks}
+              onToggle={(code, done) => app.updateTask(code, { done })}
+              onImport={app.importStatus}
+            />
+          ) : app.activeStage === "verificacao" ? (
+            <VerificationPanel
+              project={app.project}
+              items={app.project.verification}
+              onToggle={app.toggleVerification}
+              onRebuild={app.buildVerification}
+            />
+          ) : (
+            <ChatPanel stage={stage} state={state} busy={app.busy} onSend={app.sendMessage} onGenerate={app.generateDoc} />
+          )}
+        </div>
+
+        <div
+          role="separator"
+          aria-orientation="vertical"
+          title="Arraste para redimensionar"
+          onPointerDown={onHandlePointerDown}
+          className="group flex w-2 flex-none cursor-col-resize items-center justify-center"
+        >
+          <div className="h-10 w-[3px] rounded-full bg-line/60 transition-colors group-hover:bg-accent group-active:bg-accent" />
+        </div>
 
         <DocumentPanel
           stage={stage}
