@@ -180,45 +180,16 @@ export function useProject() {
           },
         }));
       } else if (stageId === "tarefas") {
-        const tasks: Task[] = [];
-        let counter = 1;
+        let tasks: Task[] = [];
         for (let i = 0; i < project.features.length; i++) {
           const feature = project.features[i];
           if (!feature) continue;
           setBusy(`Gerando tarefas de ${feature.name} (${i + 1}/${project.features.length})…`);
-          const folder = `${String(i + 1).padStart(3, "0")}-${feature.slug}`;
-          const res = parseJson(await callJson({
-            data: {
-              kind: "tasks",
-              system: docSystem(project, stageId),
-              prompt: `Feature: ${feature.name} (pasta ${folder})\n\nSpec:\n${feature.spec}\n\nTelas:\n${feature.telas}\n\nQuebre em 2 a 6 tarefas pequenas. Cada item: "code" (T001, T002... continuando a partir de T${String(counter).padStart(3, "0")}), "title" e "markdown" seguindo EXATAMENTE o template de tarefa, com o campo Feature preenchido como ${folder}.`,
-            },
-          })) as { tasks: { code: string; title: string; markdown: string }[] };
-
-          res.tasks.forEach((t) => {
-            const code = `T${String(counter).padStart(3, "0")}`;
-            counter += 1;
-            tasks.push({
-              code,
-              featureSlug: feature.slug,
-              title: t.title,
-              markdown: t.markdown.replace(/^#\s*T\d+/, `# ${code}`),
-              done: false,
-            });
-          });
+          tasks.push(...(await generateFeatureTasks(feature, i, tasks)));
         }
-        setProject((p) => ({
-          ...p,
-          tasks,
-          stages: {
-            ...p.stages,
-            tarefas: {
-              ...p.stages.tarefas,
-              doc: tasks.map((t) => `- ${t.code} — ${t.title}`).join("\n"),
-              stale: false,
-            },
-          },
-        }));
+        commitTasks(() => tasks);
+        void tasks;
+        tasks = [];
       } else {
         toast.info("Esta etapa não gera documento por IA.");
       }
