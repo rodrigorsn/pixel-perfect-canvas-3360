@@ -72,7 +72,7 @@ export function DocumentPanel(props: Props) {
   const docValue = current ? current.value : state.doc;
 
   return (
-    <section className="flex w-[400px] flex-none flex-col overflow-hidden rounded-[10px] bg-panel/60 ring-1 ring-black/5 backdrop-blur-xl">
+    <section className="flex min-w-0 flex-1 flex-col overflow-hidden rounded-[10px] bg-panel/60 ring-1 ring-black/5 backdrop-blur-xl">
       <div className="flex h-[42px] flex-none items-center gap-1 border-b border-line/40 px-3">
         {current && (
           <button
