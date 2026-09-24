@@ -267,7 +267,7 @@ export function useProject() {
   const updateFeature = useCallback((slug: string, patch: Partial<Feature>) => {
     setProject((p) => ({
       ...p,
-      features: p.features.map((f) => (f.slug === slug ? { ...f, ...patch } : f)),
+      features: p.features.map((f) => (f.slug === slug ? ({ ...f, ...patch } as Feature) : f)),
     }));
   }, []);
 
@@ -299,14 +299,17 @@ export function useProject() {
   }, []);
 
   const updateTask = useCallback((code: string, patch: Partial<Task>) => {
-    setProject((p) => ({ ...p, tasks: p.tasks.map((t) => (t.code === code ? { ...t, ...patch } : t)) }));
+    setProject((p) => ({
+      ...p,
+      tasks: p.tasks.map((t) => (t.code === code ? ({ ...t, ...patch } as Task) : t)),
+    }));
   }, []);
 
   const importStatus = useCallback((content: string) => {
     const parsed = parseStatusMd(content);
     setProject((p) => ({
       ...p,
-      tasks: p.tasks.map((t) => (t.code in parsed ? { ...t, done: parsed[t.code] } : t)),
+      tasks: p.tasks.map((t) => ({ ...t, done: parsed[t.code] ?? t.done })),
     }));
     toast.success(`${Object.keys(parsed).length} tarefas lidas do STATUS.md.`);
   }, []);
