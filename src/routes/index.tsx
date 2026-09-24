@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useRef, useState } from "react";
+import { useCallback, useMemo, useRef, useState, type PointerEvent as ReactPointerEvent } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { Package, RotateCcw } from "lucide-react";
 import { ChatPanel } from "@/components/spec/ChatPanel";
@@ -41,7 +41,7 @@ function Studio() {
   const [chatWidth, setChatWidth] = useState(480);
   const dragRef = useRef<{ startX: number; startWidth: number } | null>(null);
 
-  const onHandlePointerDown = useCallback((event: React.PointerEvent<HTMLDivElement>) => {
+  const onHandlePointerDown = useCallback((event: ReactPointerEvent<HTMLDivElement>) => {
     event.preventDefault();
     dragRef.current = { startX: event.clientX, startWidth: chatWidth };
     const onMove = (move: PointerEvent) => {
