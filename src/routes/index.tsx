@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { Package, RotateCcw } from "lucide-react";
 import { ChatPanel } from "@/components/spec/ChatPanel";
@@ -6,6 +6,7 @@ import { DocumentPanel } from "@/components/spec/DocumentPanel";
 import { ExportDialog } from "@/components/spec/ExportDialog";
 import { ImplementationPanel, VerificationPanel } from "@/components/spec/TrackerPanels";
 import { ProjectMap } from "@/components/spec/ProjectMap";
+import { buildFileMap } from "@/lib/spec/export";
 import { stageById } from "@/lib/spec/stages";
 import { useProject } from "@/lib/spec/useProject";
 
