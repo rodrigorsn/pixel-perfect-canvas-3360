@@ -3,9 +3,9 @@ import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import { aiJson, aiText } from "../ai.functions";
 import { STAGES, stageById } from "./stages";
-import { docSystem, interviewSystem, transcript } from "./prompts";
+import { approvedContext, docSystem, interviewSystem, transcript } from "./prompts";
 import { emptyProject, loadProject, saveProject, slugify } from "./storage";
-import { acceptanceCriteria, parseStatusMd } from "./export";
+import { WORKFLOW_TEXT, acceptanceCriteria, parseStatusMd } from "./export";
 import { newId, pagesForPrompt, withPages } from "./pages";
 import { preserveDone, renumberTasks, tasksFromAi, type AiTask } from "./tasks";
 import type { Feature, Page, Project, StageId, Task } from "./types";
@@ -130,6 +130,34 @@ export function useProject() {
     },
     [project, callJson],
   );
+
+  const setAgentsMd = useCallback((agentsMd: string) => setProject((p) => ({ ...p, agentsMd })), []);
+
+  const generateAgentsMd = useCallback(async () => {
+    setBusy("Gerando AGENTS.md…");
+    try {
+      const system = `Você é um arquiteto de software sênior. Escreva o arquivo AGENTS.md (constituição do repositório para agentes de código) com base nos documentos aprovados abaixo. Responda APENAS com o markdown, sem cercas de código externas.
+
+Seções obrigatórias, nesta ordem:
+# ${project.name} — Constituição do projeto
+## Resumo do produto
+## Stack — exatamente a stack de docs/02-arquitetura.md, sem inventar nada.
+## Estrutura de pastas — copiada da arquitetura.
+## Regras de código e invariantes — derivadas dos ADRs e dos RNFs do PRD.
+## Comandos — comandos reais para instalar, rodar, migrations, testes, lint e build, de acordo com a stack definida.
+## Fluxo de trabalho — copie EXATAMENTE este texto, sem alterações:
+${WORKFLOW_TEXT}
+
+${approvedContext(project, "implementacao")}`;
+      const res = await callText({ data: { system, messages: [{ role: "user", content: "Gere o AGENTS.md." }] } });
+      setAgentsMd(res.text);
+      toast.success("AGENTS.md gerado.");
+    } catch (error) {
+      toast.error(errorMessage(error));
+    } finally {
+      setBusy(null);
+    }
+  }, [project, callText, setAgentsMd]);
 
   const commitTasks = useCallback((build: (previous: Task[]) => Task[]) => {
     setProject((p) => {
@@ -418,6 +446,8 @@ export function useProject() {
     generateDoc,
     regenerateFeatureTasks,
     generateWireframe,
+    generateAgentsMd,
+    setAgentsMd,
     approveStage,
     reopenStage,
     setDoc,

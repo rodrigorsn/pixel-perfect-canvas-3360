@@ -22,6 +22,7 @@ export function emptyProject(name = "Novo projeto"): Project {
     features: [],
     tasks: [],
     verification: [],
+    agentsMd: "",
   };
 }
 
@@ -34,6 +35,7 @@ export function loadProject(): Project | null {
     if (!parsed?.stages) return null;
     return {
       ...parsed,
+      agentsMd: typeof parsed.agentsMd === "string" ? parsed.agentsMd : "",
       features: (parsed.features ?? []).map((f) => ({ ...f, pages: Array.isArray(f.pages) ? f.pages : [] })),
       tasks: (parsed.tasks ?? []).map((t) => ({
         ...t,
