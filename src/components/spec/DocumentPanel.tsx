@@ -107,12 +107,18 @@ export function DocumentPanel(props: Props) {
             {value === "preview" ? "Prévia" : "Editar"}
           </button>
         ))}
-        {stage.id === "tarefas" && !current && project.tasks.length > 0 && (
+        {!current && (stage.id === "tarefas" ? project.tasks.length > 0 : stage.id === "telas" && project.features.length > 0) && (
           <span className="ml-auto flex items-center gap-1">
             <button
               type="button"
               title="Expandir todas"
-              onClick={() => setExpanded(new Set(project.tasks.map((t) => t.code)))}
+              onClick={() =>
+                setExpanded(
+                  stage.id === "tarefas"
+                    ? new Set(project.tasks.map((t) => t.code))
+                    : new Set(project.features.map((f) => f.slug)),
+                )
+              }
               className="flex items-center gap-1 rounded-md px-2 py-1 text-[11px] font-medium text-muted-foreground ring-1 ring-line/60 hover:bg-ink/5"
             >
               <UnfoldVertical className="size-3" /> Expandir
@@ -127,7 +133,7 @@ export function DocumentPanel(props: Props) {
             </button>
           </span>
         )}
-        <span className={cn("font-mono text-[10px] text-muted-foreground", stage.id === "tarefas" && !current && project.tasks.length > 0 ? "" : "ml-auto")}>{stage.docPath}</span>
+        <span className={cn("font-mono text-[10px] text-muted-foreground", !current && (stage.id === "tarefas" ? project.tasks.length > 0 : stage.id === "telas" && project.features.length > 0) ? "" : "ml-auto")}>{stage.docPath}</span>
       </div>
 
       <div className="min-h-0 flex-1 overflow-y-auto p-4">
