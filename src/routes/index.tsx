@@ -138,6 +138,7 @@ function Studio() {
           onFeatureAdd={app.addFeature}
           onTaskChange={app.updateTask}
           onRegenerateFeatureTasks={app.regenerateFeatureTasks}
+          onGenerateWireframe={app.generateWireframe}
         />
       </div>
 

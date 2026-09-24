@@ -21,9 +21,10 @@ export function taskMarkdown(code: string, folder: string, t: AiTask): string {
   return [
     `# ${code} — ${t.title}`,
     `**Feature:** ${folder} | **Refs:** ${t.refs.length ? t.refs.join(", ") : "—"}`,
+    `**Tipo:** ${t.kind === "prototype" ? "Protótipo visual" : "Funcional"} | **Depende de:** —`,
     `## Objetivo`,
     t.objective.trim(),
-    `## Arquivos que pode criar/alterar`,
+    `## Arquivos prováveis (confirmar no /plan)`,
     ...list(t.files, "—").map((f) => `- ${f}`),
     `## Ação → Resultado esperado`,
     `| Ação | Resultado esperado |`,
@@ -35,6 +36,8 @@ export function taskMarkdown(code: string, folder: string, t: AiTask): string {
     t.howToVerify.trim(),
     `## Fora de escopo`,
     t.outOfScope.trim(),
+    `## Plano de implementação`,
+    `_A ser preenchido pelo comando /plan dentro da IDE._`,
     "",
   ].join("\n");
 }
@@ -90,11 +93,12 @@ export function renumberTasks(tasks: Task[], features: Feature[]): Task[] {
   indexed.forEach(({ t }, i) => map.set(t.code, `T${String(i + 1).padStart(3, "0")}`));
   return indexed.map(({ t }) => {
     const code = map.get(t.code)!;
-    return {
-      ...t,
-      code,
-      dependsOn: t.dependsOn.map((d) => map.get(d)).filter((d): d is string => !!d),
-      markdown: t.markdown.replace(/^#\s*\S+\s*—/, `# ${code} —`),
-    };
+    const dependsOn = t.dependsOn.map((d) => map.get(d)).filter((d): d is string => !!d);
+    const deps = dependsOn.length ? dependsOn.join(", ") : "—";
+    let markdown = t.markdown.replace(/^#\s*\S+\s*—/, `# ${code} —`);
+    markdown = /\*\*Depende de:\*\*/.test(markdown)
+      ? markdown.replace(/\*\*Depende de:\*\*[^\n]*/, `**Depende de:** ${deps}`)
+      : markdown;
+    return { ...t, code, dependsOn, markdown };
   });
 }

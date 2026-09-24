@@ -102,7 +102,7 @@ flowchart TD
     hasChat: true,
     multi: true,
     focus:
-      "Descrever as telas de cada feature: elementos da tela e uma tabela 'Ação do usuário → Resultado esperado'.",
+      "Descrever as telas de cada feature: páginas, componentes de cada página e comportamentos (ação do usuário → resultado esperado → caso de erro).",
     template: `# Telas — [Feature]
 
 ## Tela: [nome]
@@ -123,9 +123,10 @@ flowchart TD
       "Quebrar cada feature em tarefas pequenas, cada uma executável em uma única sessão de um agente de código.",
     template: `# T001 — [título]
 **Feature:** NNN-nome | **Refs:** RF-02, ADR-0001
+**Tipo:** Protótipo visual | **Depende de:** T00X, T00Y
 ## Objetivo
 Uma frase.
-## Arquivos que pode criar/alterar
+## Arquivos prováveis (confirmar no /plan)
 - caminho/arquivo
 ## Ação → Resultado esperado
 | Ação | Resultado esperado |
@@ -135,7 +136,9 @@ Uma frase.
 ## Como verificar
 Comando ou passo manual que prova que funciona.
 ## Fora de escopo
-O que NÃO fazer nesta tarefa.`,
+O que NÃO fazer nesta tarefa.
+## Plano de implementação
+_A ser preenchido pelo comando /plan dentro da IDE._`,
   },
   {
     id: "implementacao",

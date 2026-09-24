@@ -34,6 +34,7 @@ export function loadProject(): Project | null {
     if (!parsed?.stages) return null;
     return {
       ...parsed,
+      features: (parsed.features ?? []).map((f) => ({ ...f, pages: Array.isArray(f.pages) ? f.pages : [] })),
       tasks: (parsed.tasks ?? []).map((t) => ({
         ...t,
         kind: t.kind === "prototype" ? "prototype" : "functional",

@@ -6,8 +6,9 @@ import { STAGES, stageById } from "./stages";
 import { docSystem, interviewSystem, transcript } from "./prompts";
 import { emptyProject, loadProject, saveProject, slugify } from "./storage";
 import { acceptanceCriteria, parseStatusMd } from "./export";
+import { newId, pagesForPrompt, withPages } from "./pages";
 import { preserveDone, renumberTasks, tasksFromAi, type AiTask } from "./tasks";
-import type { Feature, Project, StageId, Task } from "./types";
+import type { Feature, Page, Project, StageId, Task } from "./types";
 
 export function useProject() {
   const [project, setProject] = useState<Project>(() => emptyProject());
@@ -91,12 +92,43 @@ export function useProject() {
         data: {
           kind: "tasks",
           system: docSystem(project, "tarefas"),
-          prompt: `Feature: ${feature.name} (pasta ${folder})\n\nSpec:\n${feature.spec}\n\nTelas:\n${feature.telas}${known}\n\nQuebre em 2 a 6 tarefas pequenas, preenchendo os campos estruturados (não escreva markdown). "kind": "prototype" para tarefas de protótipo visual (telas com dados fictícios, sem lógica real) ou "functional" para lógica, dados e integração. "dependsOn": títulos exatos de tarefas desta mesma resposta ou códigos listados acima. "refs": ids como RF-02, ADR-0001. "actions": pares ação/resultado esperado.`,
+          prompt: `Feature: ${feature.name} (pasta ${folder})\n\nSpec:\n${feature.spec}\n\nPáginas (JSON):\n${pagesForPrompt(feature)}${known}\n\nPreencha os campos estruturados (não escreva markdown). Regras:\n- kind "prototype": UMA tarefa por página, só visual (layout, componentes, estados vazio, carregando e erro com dados fictícios), sem banco, sem API e sem lógica de negócio.\n- kind "functional": tarefas que tornam os comportamentos reais (persistência, validações, integrações, regras de negócio), agrupando no máximo 3 a 5 comportamentos relacionados por tarefa. Cada tarefa funcional depende (dependsOn) da tarefa de protótipo da sua página.\n- "dependsOn": títulos exatos de tarefas desta mesma resposta ou códigos listados acima.\n- "actions": use os comportamentos das páginas envolvidas (action = trigger, expectedResult = expectedResult).\n- "files": caminhos seguindo a estrutura de pastas definida em docs/02-arquitetura.md.\n- "refs": ids como RF-02, ADR-0001.`,
         },
       })) as { tasks: AiTask[] };
       return tasksFromAi(feature, folder, res.tasks, existing);
     },
     [callJson, project],
+  );
+
+  const generateWireframe = useCallback(
+    async (slug: string, pageId: string) => {
+      const feature = project.features.find((f) => f.slug === slug);
+      const page = feature?.pages.find((pg) => pg.id === pageId);
+      if (!feature || !page) return;
+      setBusy(`Gerando wireframe de ${page.name}…`);
+      try {
+        const res = parseJson(await callJson({
+          data: {
+            kind: "wireframe",
+            system: docSystem(project, "telas"),
+            prompt: `Feature: ${feature.name}\nPágina: ${page.name} (${page.route})\nObjetivo: ${page.purpose}\nComponentes:\n${JSON.stringify(page.components.map((c) => ({ name: c.name, description: c.description, behaviors: c.behaviors })), null, 1)}\n\nDevolva em "html" um wireframe simples e completo desta página em HTML+CSS inline, tons de cinza, sem imagens, sem scripts, mostrando todos os componentes rotulados pelo nome.`,
+          },
+        })) as { html: string };
+        setProject((p) => ({
+          ...p,
+          features: p.features.map((f) =>
+            f.slug === slug
+              ? { ...f, pages: f.pages.map((pg) => (pg.id === pageId ? { ...pg, wireframe: res.html } : pg)) }
+              : f,
+          ),
+        }));
+      } catch (error) {
+        toast.error(errorMessage(error));
+      } finally {
+        setBusy(null);
+      }
+    },
+    [project, callJson],
   );
 
   const commitTasks = useCallback((build: (previous: Task[]) => Task[]) => {
@@ -179,7 +211,7 @@ export function useProject() {
           description: f.description,
           spec: "",
           telas: "",
-          wireframe: "",
+          pages: [],
         }));
 
         setBusy(`Gerando specs (0/${features.length})…`);
@@ -223,10 +255,18 @@ export function useProject() {
             data: {
               kind: "telas",
               system: docSystem(project, stageId),
-              prompt: `Feature: ${feature.name} — ${feature.description}\n\nSpec:\n${feature.spec}\n\nDevolva em "markdown" a descrição das telas (elementos + tabela Ação do usuário → Resultado esperado) e em "wireframeHtml" um wireframe simples e completo em HTML+CSS inline, tons de cinza, sem imagens, sem scripts, representando a tela principal.`,
+              prompt: `Feature: ${feature.name} — ${feature.description}\n\nSpec:\n${feature.spec}${componentCatalog(features)}\n\nDevolva "pages": as páginas da feature. Cada página: name, route (ex.: /tarefas), purpose (uma frase), components. Cada componente: name, description e behaviors (trigger = o que o usuário faz, expectedResult, errorCase). Reutilize componentes com o MESMO nome entre páginas (e das features anteriores listadas) em vez de inventar variações.`,
             },
-          })) as { markdown: string; wireframeHtml: string };
-          features[i] = { ...feature, telas: res.markdown, wireframe: res.wireframeHtml };
+          })) as { pages: Omit<Page, "id" | "wireframe">[] };
+          features[i] = withPages(
+            feature,
+            res.pages.map((pg) => ({
+              ...pg,
+              id: newId(),
+              wireframe: "",
+              components: pg.components.map((c) => ({ ...c, id: newId() })),
+            })),
+          );
         }
         setProject((p) => ({
           ...p,
@@ -293,7 +333,11 @@ export function useProject() {
   const updateFeature = useCallback((slug: string, patch: Partial<Feature>) => {
     setProject((p) => ({
       ...p,
-      features: p.features.map((f) => (f.slug === slug ? ({ ...f, ...patch } as Feature) : f)),
+      features: p.features.map((f) => {
+        if (f.slug !== slug) return f;
+        const next = { ...f, ...patch } as Feature;
+        return patch.pages || patch.name ? withPages(next, next.pages) : next;
+      }),
     }));
   }, []);
 
@@ -320,7 +364,7 @@ export function useProject() {
     if (!slug) return;
     setProject((p) => ({
       ...p,
-      features: [...p.features, { slug, name, description: "", spec: "", telas: "", wireframe: "" }],
+      features: [...p.features, { slug, name, description: "", spec: "", telas: "", pages: [] }],
     }));
   }, []);
 
@@ -373,6 +417,7 @@ export function useProject() {
     sendMessage,
     generateDoc,
     regenerateFeatureTasks,
+    generateWireframe,
     approveStage,
     reopenStage,
     setDoc,
@@ -394,4 +439,9 @@ function errorMessage(error: unknown) {
   if (raw.includes("402")) return "Créditos de IA esgotados. Adicione créditos para continuar.";
   if (raw.includes("429")) return "Muitas requisições seguidas. Aguarde alguns segundos e tente de novo.";
   return `Falha ao falar com a IA: ${raw}`;
+}
+
+function componentCatalog(features: Feature[]) {
+  const names = [...new Set(features.flatMap((f) => f.pages.flatMap((p) => p.components.map((c) => c.name))))];
+  return names.length ? `\n\nComponentes já existentes (reutilize pelo nome): ${names.join(", ")}` : "";
 }
