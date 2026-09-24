@@ -74,17 +74,13 @@ export const aiJson = createServerFn({ method: "POST" })
   .inputValidator((input: unknown) => JsonInput.parse(input))
   .handler(async ({ data }) => {
     const lovable = createResponsesProvider();
+    const schema = schemas[data.kind] as unknown as z.ZodType<Record<string, unknown>>;
     const result = streamText({
       model: lovable.responses(MODEL_ID),
       system: data.system,
       prompt: data.prompt,
-      output: Output.object({ schema: schemas[data.kind] }),
+      output: Output.object({ schema }),
       providerOptions: RESPONSES_OPTIONS,
     });
-    const output = await result.output;
-    return output as
-      | z.infer<(typeof schemas)["features"]>
-      | z.infer<(typeof schemas)["tasks"]>
-      | z.infer<(typeof schemas)["arquitetura"]>
-      | z.infer<(typeof schemas)["telas"]>;
+    return (await result.output) as Record<string, unknown>;
   });
