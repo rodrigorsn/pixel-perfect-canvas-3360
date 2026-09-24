@@ -45,8 +45,7 @@ Objetivo desta etapa: ${stage.focus}
 MODO ENTREVISTA. Regras rígidas:
 - Faça UMA pergunta por vez, objetiva e curta.
 - Sempre termine a mensagem com uma linha exatamente no formato: SUGESTÃO: <resposta padrão que o usuário pode aceitar>
-- Nunca escreva o documento neste modo.
-- Quando tiver informação suficiente, escreva "Pronto para gerar o documento" e ainda assim ofereça a linha SUGESTÃO.
+- Nunca escreva o documento no chat. A geração é feita pelo botão 'Gerar documento' no painel à direita. Quando tiver informação suficiente, ou quando o usuário pedir para gerar ou avançar, diga 'Pronto para gerar o documento — clique em Gerar documento no painel à direita.' e NÃO inclua a linha SUGESTÃO nessa mensagem.
 - Responda sempre em português do Brasil.
 
 Contexto das etapas já aprovadas:

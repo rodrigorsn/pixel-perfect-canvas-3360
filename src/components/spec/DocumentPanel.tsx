@@ -174,7 +174,14 @@ export function DocumentPanel(props: Props) {
           type="button"
           disabled={!!busy}
           onClick={props.onGenerate}
-          className="flex-1 rounded-md px-3 py-1.5 text-[12px] font-medium ring-1 ring-line hover:bg-ink/5 disabled:opacity-50"
+          className={
+            (() => {
+              const last = state.messages[state.messages.length - 1];
+              return last?.role === "assistant" && /pronto para gerar o documento/i.test(last.content);
+            })()
+              ? "flex-1 rounded-md bg-accent px-3 py-1.5 text-[12px] font-medium text-accent-foreground ring-2 ring-accent/60 disabled:opacity-50"
+              : "flex-1 rounded-md px-3 py-1.5 text-[12px] font-medium ring-1 ring-line hover:bg-ink/5 disabled:opacity-50"
+          }
         >
           {busy ? <Loader2 className="mx-auto size-3.5 animate-spin" /> : state.doc ? "Regerar" : "Gerar documento"}
         </button>
