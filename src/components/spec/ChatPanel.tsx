@@ -87,6 +87,16 @@ export function ChatPanel({ stage, state, busy, onSend, onGenerate }: Props) {
           );
         })}
 
+        {ready && !busy && (
+          <button
+            type="button"
+            onClick={onGenerate}
+            className="self-start rounded-md bg-accent px-3 py-1.5 text-[12px] font-medium text-accent-foreground"
+          >
+            Gerar documento agora
+          </button>
+        )}
+
         {busy && (
           <div className="flex items-center gap-2 font-mono text-[11px] text-muted-foreground">
             <Loader2 className="size-3 animate-spin" /> {busy}
