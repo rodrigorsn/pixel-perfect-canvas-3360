@@ -184,6 +184,7 @@ export function useProject() {
         let counter = 1;
         for (let i = 0; i < project.features.length; i++) {
           const feature = project.features[i];
+          if (!feature) continue;
           setBusy(`Gerando tarefas de ${feature.name} (${i + 1}/${project.features.length})…`);
           const folder = `${String(i + 1).padStart(3, "0")}-${feature.slug}`;
           const res = (await callJson({
