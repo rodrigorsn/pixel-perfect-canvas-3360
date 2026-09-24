@@ -137,6 +137,7 @@ function Studio() {
           onFeatureMove={app.moveFeature}
           onFeatureAdd={app.addFeature}
           onTaskChange={app.updateTask}
+          onRegenerateFeatureTasks={app.regenerateFeatureTasks}
         />
       </div>
 

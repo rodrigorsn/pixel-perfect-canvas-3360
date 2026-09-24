@@ -19,6 +19,7 @@ interface Props {
   onFeatureMove: (slug: string, delta: number) => void;
   onFeatureAdd: (name: string) => void;
   onTaskChange: (code: string, patch: Partial<Task>) => void;
+  onRegenerateFeatureTasks: (slug: string) => void;
 }
 
 type Tab = "preview" | "editar";
@@ -113,6 +114,8 @@ export function DocumentPanel(props: Props) {
             newFeature={newFeature}
             setNewFeature={setNewFeature}
             onFeatureAdd={props.onFeatureAdd}
+            busy={busy}
+            onRegenerateFeatureTasks={props.onRegenerateFeatureTasks}
           />
         ) : tab === "editar" ? (
           <textarea
@@ -197,6 +200,8 @@ function ItemList({
   newFeature,
   setNewFeature,
   onFeatureAdd,
+  busy,
+  onRegenerateFeatureTasks,
 }: {
   stage: StageDef;
   project: Project;
@@ -206,27 +211,54 @@ function ItemList({
   newFeature: string;
   setNewFeature: (v: string) => void;
   onFeatureAdd: (name: string) => void;
+  busy: string | null;
+  onRegenerateFeatureTasks: (slug: string) => void;
 }) {
   if (stage.id === "tarefas") {
     if (!project.tasks.length) {
       return <p className="font-mono text-[11px] text-muted-foreground">Nenhuma tarefa gerada ainda.</p>;
     }
     return (
-      <ul className="flex flex-col gap-1">
-        {project.tasks.map((task) => (
-          <li key={task.code}>
-            <button
-              type="button"
-              onClick={() => onSelect(task.code)}
-              className="w-full rounded-md px-2 py-2 text-left text-[12px] ring-1 ring-line/50 hover:bg-ink/5"
-            >
-              <span className="font-mono text-[10px] text-accent">{task.code}</span>{" "}
-              <span>{task.title}</span>
-              <span className="mt-0.5 block font-mono text-[10px] text-muted-foreground">{task.featureSlug}</span>
-            </button>
-          </li>
-        ))}
-      </ul>
+      <div className="flex flex-col gap-3">
+        {project.features.map((feature, index) => {
+          const tasks = project.tasks.filter((t) => t.featureSlug === feature.slug);
+          return (
+            <div key={feature.slug} className="flex flex-col gap-1">
+              <div className="flex items-center gap-2">
+                <span className="min-w-0 flex-1 truncate font-mono text-[10px] text-muted-foreground">
+                  {String(index + 1).padStart(3, "0")}-{feature.slug}
+                </span>
+                <button
+                  type="button"
+                  disabled={!!busy}
+                  onClick={() => onRegenerateFeatureTasks(feature.slug)}
+                  className="rounded-md px-2 py-0.5 text-[11px] font-medium ring-1 ring-line hover:bg-ink/5 disabled:opacity-50"
+                >
+                  Regerar tarefas
+                </button>
+              </div>
+              <ul className="flex flex-col gap-1">
+                {tasks.map((task) => (
+                  <li key={task.code}>
+                    <button
+                      type="button"
+                      onClick={() => onSelect(task.code)}
+                      className="w-full rounded-md px-2 py-2 text-left text-[12px] ring-1 ring-line/50 hover:bg-ink/5"
+                    >
+                      <span className="font-mono text-[10px] text-accent">{task.code}</span>{" "}
+                      <span>{task.title}</span>
+                      <span className="mt-0.5 block font-mono text-[10px] text-muted-foreground">
+                        {task.kind === "prototype" ? "protótipo" : "funcional"}
+                        {task.dependsOn.length ? ` · depende de ${task.dependsOn.join(", ")}` : ""}
+                      </span>
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          );
+        })}
+      </div>
     );
   }
 

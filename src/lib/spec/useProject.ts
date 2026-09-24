@@ -6,6 +6,7 @@ import { STAGES, stageById } from "./stages";
 import { docSystem, interviewSystem, transcript } from "./prompts";
 import { emptyProject, loadProject, saveProject, slugify } from "./storage";
 import { acceptanceCriteria, parseStatusMd } from "./export";
+import { preserveDone, renumberTasks, tasksFromAi, type AiTask } from "./tasks";
 import type { Feature, Project, StageId, Task } from "./types";
 
 export function useProject() {
@@ -77,6 +78,62 @@ export function useProject() {
       }
     },
     [activeStage, project, callText, patchStage],
+  );
+
+  const generateFeatureTasks = useCallback(
+    async (feature: Feature, index: number, others: Task[]): Promise<Task[]> => {
+      const folder = `${String(index + 1).padStart(3, "0")}-${feature.slug}`;
+      const existing = others.filter((t) => t.featureSlug !== feature.slug);
+      const known = existing.length
+        ? `\n\nTarefas de outras features (use estes códigos em dependsOn quando houver dependência):\n${existing.map((t) => `- ${t.code} — ${t.title} (${t.featureSlug})`).join("\n")}`
+        : "";
+      const res = parseJson(await callJson({
+        data: {
+          kind: "tasks",
+          system: docSystem(project, "tarefas"),
+          prompt: `Feature: ${feature.name} (pasta ${folder})\n\nSpec:\n${feature.spec}\n\nTelas:\n${feature.telas}${known}\n\nQuebre em 2 a 6 tarefas pequenas, preenchendo os campos estruturados (não escreva markdown). "kind": "prototype" para tarefas de protótipo visual (telas com dados fictícios, sem lógica real) ou "functional" para lógica, dados e integração. "dependsOn": títulos exatos de tarefas desta mesma resposta ou códigos listados acima. "refs": ids como RF-02, ADR-0001. "actions": pares ação/resultado esperado.`,
+        },
+      })) as { tasks: AiTask[] };
+      return tasksFromAi(feature, folder, res.tasks, existing);
+    },
+    [callJson, project],
+  );
+
+  const commitTasks = useCallback((build: (previous: Task[]) => Task[]) => {
+    setProject((p) => {
+      const tasks = renumberTasks(preserveDone(build(p.tasks), p.tasks), p.features);
+      return {
+        ...p,
+        tasks,
+        stages: {
+          ...p.stages,
+          tarefas: {
+            ...p.stages.tarefas,
+            doc: tasks.map((t) => `- ${t.code} — ${t.title}`).join("\n"),
+            stale: false,
+          },
+        },
+      };
+    });
+  }, []);
+
+  const regenerateFeatureTasks = useCallback(
+    async (slug: string) => {
+      const index = project.features.findIndex((f) => f.slug === slug);
+      const feature = project.features[index];
+      if (!feature) return;
+      setBusy(`Gerando tarefas de ${feature.name}…`);
+      try {
+        const fresh = await generateFeatureTasks(feature, index, project.tasks);
+        commitTasks((prev) => [...prev.filter((t) => t.featureSlug !== slug), ...fresh]);
+        toast.success(`Tarefas de ${feature.name} regeneradas.`);
+      } catch (error) {
+        toast.error(errorMessage(error));
+      } finally {
+        setBusy(null);
+      }
+    },
+    [project, generateFeatureTasks, commitTasks],
   );
 
   const generateDoc = useCallback(async () => {
@@ -180,7 +237,7 @@ export function useProject() {
           },
         }));
       } else if (stageId === "tarefas") {
-        let tasks: Task[] = [];
+        const tasks: Task[] = [];
         for (let i = 0; i < project.features.length; i++) {
           const feature = project.features[i];
           if (!feature) continue;
@@ -188,8 +245,6 @@ export function useProject() {
           tasks.push(...(await generateFeatureTasks(feature, i, tasks)));
         }
         commitTasks(() => tasks);
-        void tasks;
-        tasks = [];
       } else {
         toast.info("Esta etapa não gera documento por IA.");
       }
@@ -200,7 +255,7 @@ export function useProject() {
     }
 
     void stage;
-  }, [activeStage, project, callText, callJson, patchStage]);
+  }, [activeStage, project, callText, callJson, patchStage, generateFeatureTasks, commitTasks]);
 
   const approveStage = useCallback(
     (id: StageId) => {
@@ -317,6 +372,7 @@ export function useProject() {
     renameProject,
     sendMessage,
     generateDoc,
+    regenerateFeatureTasks,
     approveStage,
     reopenStage,
     setDoc,
