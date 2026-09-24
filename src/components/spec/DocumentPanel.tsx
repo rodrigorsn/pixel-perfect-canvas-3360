@@ -252,6 +252,8 @@ function ItemList({
   onFeatureAdd,
   busy,
   onRegenerateFeatureTasks,
+  expanded,
+  onToggleTask,
 }: {
   stage: StageDef;
   project: Project;
@@ -263,6 +265,8 @@ function ItemList({
   onFeatureAdd: (name: string) => void;
   busy: string | null;
   onRegenerateFeatureTasks: (slug: string) => void;
+  expanded: Set<string>;
+  onToggleTask: (code: string) => void;
 }) {
   if (stage.id === "tarefas") {
     if (!project.tasks.length) {
