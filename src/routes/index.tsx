@@ -35,8 +35,25 @@ function Studio() {
   const app = useProject();
   const [exportOpen, setExportOpen] = useState(false);
   const stage = stageById(app.activeStage);
-  const state = app.project.stages[app.activeStage];
+  const rawState = app.project.stages[app.activeStage];
   const canExport = app.project.stages.tarefas.status === "concluida";
+
+  const state = useMemo(() => {
+    if (app.activeStage === "implementacao") {
+      return { ...rawState, doc: buildFileMap(app.project)["STATUS.md"] ?? "" };
+    }
+    if (app.activeStage === "verificacao") {
+      return {
+        ...rawState,
+        doc: app.project.verification.length
+          ? `# Verificação\n\n${app.project.verification
+              .map((item) => `- [${item.done ? "x" : " "}] ${item.text}`)
+              .join("\n")}`
+          : "",
+      };
+    }
+    return rawState;
+  }, [app.activeStage, app.project, rawState]);
 
   return (
     <div className="flex h-screen w-full flex-col overflow-hidden bg-background font-body text-foreground">
