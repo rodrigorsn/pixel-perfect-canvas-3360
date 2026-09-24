@@ -159,15 +159,17 @@ export function useProject() {
       } else if (stageId === "telas") {
         const features = [...project.features];
         for (let i = 0; i < features.length; i++) {
-          setBusy(`Gerando telas de ${features[i].name} (${i + 1}/${features.length})…`);
+          const feature = features[i];
+          if (!feature) continue;
+          setBusy(`Gerando telas de ${feature.name} (${i + 1}/${features.length})…`);
           const res = (await callJson({
             data: {
               kind: "telas",
               system: docSystem(project, stageId),
-              prompt: `Feature: ${features[i].name} — ${features[i].description}\n\nSpec:\n${features[i].spec}\n\nDevolva em "markdown" a descrição das telas (elementos + tabela Ação do usuário → Resultado esperado) e em "wireframeHtml" um wireframe simples e completo em HTML+CSS inline, tons de cinza, sem imagens, sem scripts, representando a tela principal.`,
+              prompt: `Feature: ${feature.name} — ${feature.description}\n\nSpec:\n${feature.spec}\n\nDevolva em "markdown" a descrição das telas (elementos + tabela Ação do usuário → Resultado esperado) e em "wireframeHtml" um wireframe simples e completo em HTML+CSS inline, tons de cinza, sem imagens, sem scripts, representando a tela principal.`,
             },
           })) as { markdown: string; wireframeHtml: string };
-          features[i] = { ...features[i], telas: res.markdown, wireframe: res.wireframeHtml };
+          features[i] = { ...feature, telas: res.markdown, wireframe: res.wireframeHtml };
         }
         setProject((p) => ({
           ...p,
