@@ -41,16 +41,13 @@ export function Markdown({ content }: { content: string }) {
       <ReactMarkdown
         remarkPlugins={[remarkGfm]}
         components={{
-          code({ className, children, ...props }) {
-            const text = String(children ?? "");
-            if (className?.includes("language-mermaid")) {
-              return <MermaidBlock code={text.replace(/\n$/, "")} />;
+          pre({ children, ...props }) {
+            const child = Array.isArray(children) ? children[0] : children;
+            const childProps = (child as { props?: { className?: string; children?: unknown } } | undefined)?.props;
+            if (childProps?.className?.includes("language-mermaid")) {
+              return <MermaidBlock code={String(childProps.children ?? "").replace(/\n$/, "")} />;
             }
-            return (
-              <code className={className} {...props}>
-                {children}
-              </code>
-            );
+            return <pre {...props}>{children}</pre>;
           },
         }}
       >
