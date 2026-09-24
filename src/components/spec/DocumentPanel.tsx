@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { ArrowLeft, ArrowDown, ArrowUp, Loader2, Plus, Trash2 } from "lucide-react";
+import { ArrowLeft, ArrowDown, ArrowUp, ChevronDown, ChevronRight, Loader2, Plus, Trash2, UnfoldVertical, FoldVertical } from "lucide-react";
 import { Markdown } from "./Markdown";
 import { TelasEditor } from "./TelasEditor";
 import type { StageDef } from "@/lib/spec/stages";
@@ -31,11 +31,22 @@ export function DocumentPanel(props: Props) {
   const [tab, setTab] = useState<Tab>("preview");
   const [selected, setSelected] = useState<string | null>(null);
   const [newFeature, setNewFeature] = useState("");
+  const [expanded, setExpanded] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     setSelected(null);
     setTab("preview");
+    setExpanded(new Set());
   }, [stage.id]);
+
+  const toggleTask = (code: string) => {
+    setExpanded((prev) => {
+      const next = new Set(prev);
+      if (next.has(code)) next.delete(code);
+      else next.add(code);
+      return next;
+    });
+  };
 
   const isMulti = stage.multi;
   const approved = state.status === "concluida";
