@@ -85,4 +85,5 @@ export interface Project {
   features: Feature[];
   tasks: Task[];
   verification: VerificationItem[];
+  agentsMd: string;
 }

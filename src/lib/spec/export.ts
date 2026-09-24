@@ -5,7 +5,7 @@ import { pageFileName } from "./pages";
 export function buildFileMap(project: Project): Record<string, string> {
   const files: Record<string, string> = {};
 
-  files["AGENTS.md"] = `# ${project.name} — Constituição do projeto
+  files["AGENTS.md"] = project.agentsMd.trim() ? project.agentsMd : `# ${project.name} — Constituição do projeto
 
 ## Resumo do produto
 ${section(project.stages.brainstorm.doc, "## Ideia") || project.stages.brainstorm.doc || "Ver docs/00-brainstorm.md"}
@@ -32,12 +32,13 @@ ${section(project.stages.arquitetura.doc, "## Estrutura de pastas") || ""}
 - Testar: \`npm test\`
 
 ## Fluxo de trabalho
-1. Leia STATUS.md.
-2. Execute a próxima tarefa pendente (docs/tasks/...).
-3. Rode a verificação descrita na tarefa.
-4. Marque a tarefa como concluída em STATUS.md.
-5. Pare e aguarde revisão.
+${WORKFLOW_TEXT}
 `;
+
+  files[".claude/commands/plan.md"] = PLAN_CMD;
+  files[".claude/commands/execute.md"] = EXECUTE_CMD;
+  files["docs/workflow/plan.md"] = toWorkflowDoc(PLAN_CMD);
+  files["docs/workflow/execute.md"] = toWorkflowDoc(EXECUTE_CMD);
 
   files["CLAUDE.md"] = `@AGENTS.md
 
@@ -179,4 +180,38 @@ function statusSection(heading: string, tasks: Project["tasks"]) {
     ? tasks.map((t) => `- [${t.done ? "x" : " "}] ${t.code} — ${t.title} (${t.featureSlug})`).join("\n")
     : "- [ ] Nenhuma tarefa gerada";
   return `${heading}\n${lines}`;
+}
+
+export const WORKFLOW_TEXT = `1. Leia STATUS.md e pegue a próxima tarefa pendente cujas dependências (linha 'Depende de' da tarefa) estejam concluídas.
+2. Rode o planejamento da tarefa: /plan T00X no Claude Code, ou siga docs/workflow/plan.md em outras ferramentas.
+3. Aguarde a revisão humana do plano.
+4. Rode a execução: /execute T00X no Claude Code, ou siga docs/workflow/execute.md.
+5. Nunca execute mais de uma tarefa sem autorização.`;
+
+const PLAN_CMD = `---
+description: Pesquisa o código e enriquece uma tarefa antes de executá-la
+argument-hint: [código da tarefa, ex: T003]
+---
+Tarefa: $ARGUMENTS
+1. Leia AGENTS.md, o arquivo da tarefa em docs/tasks/ e a spec e o telas.md da feature referenciada.
+2. Pesquise no código existente: implementações parecidas, componentes, hooks e utilitários que podem ser reutilizados, e os padrões já usados. Não recrie o que já existe.
+3. Se a tarefa usar biblioteca ou API externa, consulte a documentação oficial atual antes de planejar.
+4. NÃO escreva código. Preencha a seção "## Plano de implementação" do arquivo da tarefa com: arquivos a criar (caminho + conteúdo), arquivos a modificar (caminho + o que muda), o que reutilizar, cenários (caminho feliz, borda, erro), mudanças no banco, dependências novas (com justificativa) e testes a escrever.
+5. Mostre o plano e pare para revisão.
+`;
+
+const EXECUTE_CMD = `---
+description: Executa uma tarefa já planejada
+argument-hint: [código da tarefa, ex: T003]
+---
+Tarefa: $ARGUMENTS
+1. Leia AGENTS.md e o arquivo da tarefa. Se a seção "Plano de implementação" ainda estiver com o texto padrão, pare e peça para rodar /plan primeiro.
+2. Crie a branch task/$ARGUMENTS.
+3. Implemente seguindo estritamente o plano, tocando apenas nos arquivos listados.
+4. Escreva e rode os testes do plano e a verificação da seção "Como verificar".
+5. Marque a tarefa como concluída em STATUS.md, faça o commit, resuma o que foi feito e pare.
+`;
+
+function toWorkflowDoc(cmd: string) {
+  return cmd.replace(/^---[\s\S]*?---\n/, "").replaceAll("$ARGUMENTS", "a tarefa indicada");
 }

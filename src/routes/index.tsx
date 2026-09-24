@@ -142,7 +142,14 @@ function Studio() {
         />
       </div>
 
-      <ExportDialog project={app.project} open={exportOpen} onOpenChange={setExportOpen} />
+      <ExportDialog
+        project={app.project}
+        open={exportOpen}
+        onOpenChange={setExportOpen}
+        busy={app.busy}
+        onGenerateAgents={app.generateAgentsMd}
+        onAgentsChange={app.setAgentsMd}
+      />
     </div>
   );
 }
