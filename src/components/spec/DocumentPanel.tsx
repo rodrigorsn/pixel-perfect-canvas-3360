@@ -292,22 +292,40 @@ function ItemList({
                 </button>
               </div>
               <ul className="flex flex-col gap-1">
-                {tasks.map((task) => (
-                  <li key={task.code}>
-                    <button
-                      type="button"
-                      onClick={() => onSelect(task.code)}
-                      className="w-full rounded-md px-2 py-2 text-left text-[12px] ring-1 ring-line/50 hover:bg-ink/5"
-                    >
-                      <span className="font-mono text-[10px] text-accent">{task.code}</span>{" "}
-                      <span>{task.title}</span>
-                      <span className="mt-0.5 block font-mono text-[10px] text-muted-foreground">
-                        {task.kind === "prototype" ? "protótipo" : "funcional"}
-                        {task.dependsOn.length ? ` · depende de ${task.dependsOn.join(", ")}` : ""}
-                      </span>
-                    </button>
-                  </li>
-                ))}
+                {tasks.map((task) => {
+                  const isOpen = expanded.has(task.code);
+                  return (
+                    <li key={task.code} className="rounded-md ring-1 ring-line/50">
+                      <div className="flex items-center gap-1">
+                        <button
+                          type="button"
+                          title={isOpen ? "Recolher" : "Expandir"}
+                          onClick={() => onToggleTask(task.code)}
+                          className="flex-none rounded p-1.5 text-muted-foreground hover:bg-ink/5"
+                        >
+                          {isOpen ? <ChevronDown className="size-3.5" /> : <ChevronRight className="size-3.5" />}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => onSelect(task.code)}
+                          className="min-w-0 flex-1 rounded-md px-1 py-2 text-left text-[12px] hover:bg-ink/5"
+                        >
+                          <span className="font-mono text-[10px] text-accent">{task.code}</span>{" "}
+                          <span>{task.title}</span>
+                          <span className="mt-0.5 block font-mono text-[10px] text-muted-foreground">
+                            {task.kind === "prototype" ? "protótipo" : "funcional"}
+                            {task.dependsOn.length ? ` · depende de ${task.dependsOn.join(", ")}` : ""}
+                          </span>
+                        </button>
+                      </div>
+                      {isOpen && (
+                        <div className="border-t border-line/40 px-3 py-2">
+                          <Markdown content={task.markdown} />
+                        </div>
+                      )}
+                    </li>
+                  );
+                })}
               </ul>
             </div>
           );
