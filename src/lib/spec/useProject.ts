@@ -127,19 +127,21 @@ export function useProject() {
 
         setBusy(`Gerando specs (0/${features.length})…`);
         for (let i = 0; i < features.length; i++) {
-          setBusy(`Gerando spec de ${features[i].name} (${i + 1}/${features.length})…`);
+          const feature = features[i];
+          if (!feature) continue;
+          setBusy(`Gerando spec de ${feature.name} (${i + 1}/${features.length})…`);
           const spec = await callText({
             data: {
               system: docSystem(project, stageId),
               messages: [
                 {
                   role: "user",
-                  content: `Escreva a spec completa da feature "${features[i].name}" (${features[i].description}). Título do documento: "# ${String(i + 1).padStart(3, "0")}-${features[i].slug} — ${features[i].name}".`,
+                  content: `Escreva a spec completa da feature "${feature.name}" (${feature.description}). Título do documento: "# ${String(i + 1).padStart(3, "0")}-${feature.slug} — ${feature.name}".`,
                 },
               ],
             },
           });
-          features[i].spec = spec.text;
+          features[i] = { ...feature, spec: spec.text };
         }
 
         setProject((p) => ({
