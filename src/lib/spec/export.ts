@@ -152,7 +152,9 @@ export function parseStatusMd(content: string) {
   const result: Record<string, boolean> = {};
   content.split("\n").forEach((line) => {
     const match = line.match(/^\s*-\s*\[([ xX])\]\s*(T\d+)/);
-    if (match) result[match[2]] = match[1].toLowerCase() === "x";
+    const mark = match?.[1];
+    const code = match?.[2];
+    if (mark && code) result[code] = mark.toLowerCase() === "x";
   });
   return result;
 }

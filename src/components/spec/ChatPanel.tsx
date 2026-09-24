@@ -13,8 +13,9 @@ interface Props {
 
 function splitSuggestion(content: string) {
   const match = content.match(/SUGEST(?:Ã|A)O:\s*(.+)\s*$/i);
-  if (!match) return { body: content, suggestion: null as string | null };
-  return { body: content.slice(0, match.index).trim(), suggestion: match[1].trim() };
+  const hint = match?.[1];
+  if (!match || !hint) return { body: content, suggestion: null as string | null };
+  return { body: content.slice(0, match.index).trim(), suggestion: hint.trim() };
 }
 
 export function ChatPanel({ stage, state, busy, onSend }: Props) {
