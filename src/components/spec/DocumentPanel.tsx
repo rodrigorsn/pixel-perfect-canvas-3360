@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { ArrowLeft, ArrowDown, ArrowUp, Loader2, Plus, Trash2 } from "lucide-react";
 import { Markdown } from "./Markdown";
+import { TelasEditor } from "./TelasEditor";
 import type { StageDef } from "@/lib/spec/stages";
 import type { Feature, Project, StageState, Task } from "@/lib/spec/types";
 import { cn } from "@/lib/utils";
@@ -20,6 +21,7 @@ interface Props {
   onFeatureAdd: (name: string) => void;
   onTaskChange: (code: string, patch: Partial<Task>) => void;
   onRegenerateFeatureTasks: (slug: string) => void;
+  onGenerateWireframe: (slug: string, pageId: string) => void;
 }
 
 type Tab = "preview" | "editar";
@@ -56,7 +58,6 @@ export function DocumentPanel(props: Props) {
         title: `Telas — ${feature.name}`,
         value: feature.telas,
         onChange: (v) => props.onFeatureChange(feature.slug, { telas: v }),
-        wireframe: feature.wireframe,
       };
     }
     return {
@@ -67,6 +68,7 @@ export function DocumentPanel(props: Props) {
   };
 
   const current = itemDoc();
+  const telasFeature = stage.id === "telas" ? project.features.find((f) => f.slug === selected) : undefined;
   const docValue = current ? current.value : state.doc;
 
   return (
@@ -104,7 +106,15 @@ export function DocumentPanel(props: Props) {
           </p>
         )}
 
-        {isMulti && !current ? (
+        {stage.id === "telas" && current && telasFeature ? (
+          <TelasEditor
+            key={telasFeature.slug}
+            feature={telasFeature}
+            busy={busy}
+            onChange={(pages) => props.onFeatureChange(telasFeature.slug, { pages })}
+            onGenerateWireframe={(pageId) => props.onGenerateWireframe(telasFeature.slug, pageId)}
+          />
+        ) : isMulti && !current ? (
           <ItemList
             stage={stage}
             project={project}

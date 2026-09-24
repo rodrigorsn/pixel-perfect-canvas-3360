@@ -1,5 +1,6 @@
 import { featureFolder } from "./storage";
 import type { Project } from "./types";
+import { pageFileName } from "./pages";
 
 export function buildFileMap(project: Project): Record<string, string> {
   const files: Record<string, string> = {};
@@ -74,7 +75,14 @@ ${statusSection("## Leva 2 — Funcional", project.tasks.filter((t) => t.kind !=
     const folder = featureFolder(index, feature.slug);
     if (feature.spec) files[`docs/specs/${folder}/spec.md`] = feature.spec;
     if (feature.telas) files[`docs/specs/${folder}/telas.md`] = feature.telas;
-    if (feature.wireframe) files[`docs/specs/${folder}/wireframe.html`] = feature.wireframe;
+    const used = new Set<string>();
+    feature.pages.forEach((page) => {
+      if (!page.wireframe) return;
+      let name = pageFileName(page);
+      while (used.has(name)) name += "-2";
+      used.add(name);
+      files[`docs/specs/${folder}/wireframes/${name}.html`] = page.wireframe;
+    });
 
     project.tasks
       .filter((t) => t.featureSlug === feature.slug)

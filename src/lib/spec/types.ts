@@ -34,6 +34,28 @@ export interface Feature {
   description: string;
   spec: string;
   telas: string;
+  pages: Page[];
+}
+
+export interface Behavior {
+  trigger: string;
+  expectedResult: string;
+  errorCase: string;
+}
+
+export interface Component {
+  id: string;
+  name: string;
+  description: string;
+  behaviors: Behavior[];
+}
+
+export interface Page {
+  id: string;
+  name: string;
+  route: string;
+  purpose: string;
+  components: Component[];
   wireframe: string;
 }
 

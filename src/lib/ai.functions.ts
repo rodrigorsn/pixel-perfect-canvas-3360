@@ -64,15 +64,30 @@ const schemas = {
     ),
   }),
   telas: z.object({
-    markdown: z.string(),
-    wireframeHtml: z.string(),
+    pages: z.array(
+      z.object({
+        name: z.string(),
+        route: z.string(),
+        purpose: z.string(),
+        components: z.array(
+          z.object({
+            name: z.string(),
+            description: z.string(),
+            behaviors: z.array(
+              z.object({ trigger: z.string(), expectedResult: z.string(), errorCase: z.string() }),
+            ),
+          }),
+        ),
+      }),
+    ),
   }),
+  wireframe: z.object({ html: z.string() }),
 } as const;
 
 export type AiJsonKind = keyof typeof schemas;
 
 const JsonInput = z.object({
-  kind: z.enum(["features", "tasks", "arquitetura", "telas"]),
+  kind: z.enum(["features", "tasks", "arquitetura", "telas", "wireframe"]),
   system: z.string(),
   prompt: z.string(),
 });
