@@ -107,7 +107,7 @@ export function DocumentPanel(props: Props) {
             {value === "preview" ? "Prévia" : "Editar"}
           </button>
         ))}
-        {!current && (stage.id === "tarefas" ? project.tasks.length > 0 : stage.id === "telas" && project.features.length > 0) && (
+        {!current && (stage.id === "tarefas" ? project.tasks.length > 0 : (stage.id === "telas" || stage.id === "features") && project.features.length > 0) && (
           <span className="ml-auto flex items-center gap-1">
             <button
               type="button"
@@ -133,7 +133,7 @@ export function DocumentPanel(props: Props) {
             </button>
           </span>
         )}
-        <span className={cn("font-mono text-[10px] text-muted-foreground", !current && (stage.id === "tarefas" ? project.tasks.length > 0 : stage.id === "telas" && project.features.length > 0) ? "" : "ml-auto")}>{stage.docPath}</span>
+        <span className={cn("font-mono text-[10px] text-muted-foreground", !current && (stage.id === "tarefas" ? project.tasks.length > 0 : (stage.id === "telas" || stage.id === "features") && project.features.length > 0) ? "" : "ml-auto")}>{stage.docPath}</span>
       </div>
 
       <div className="min-h-0 flex-1 overflow-y-auto p-4">
@@ -349,11 +349,11 @@ function ItemList({
       )}
       <ul className="flex flex-col gap-1">
         {project.features.map((feature, index) => {
-          const isOpen = stage.id === "telas" && expanded.has(feature.slug);
+          const isOpen = (stage.id === "telas" || stage.id === "features") && expanded.has(feature.slug);
           return (
             <li key={feature.slug} className={cn("rounded-md ring-1 ring-line/50", isOpen && "flex flex-col")}>
               <div className="flex items-center gap-1">
-                {stage.id === "telas" && (
+                {(stage.id === "telas" || stage.id === "features") && (
                   <button
                     type="button"
                     title={isOpen ? "Recolher" : "Expandir"}
@@ -396,7 +396,15 @@ function ItemList({
               </div>
               {isOpen && (
                 <div className="border-t border-line/40 px-3 py-2">
-                  {feature.telas ? (
+                  {stage.id === "features" ? (
+                    feature.spec ? (
+                      <Markdown content={feature.spec} />
+                    ) : (
+                      <p className="font-mono text-[11px] text-muted-foreground">
+                        {feature.description || "Spec ainda não gerada. Clique em “Gerar documento”."}
+                      </p>
+                    )
+                  ) : feature.telas ? (
                     <Markdown content={feature.telas} />
                   ) : (
                     <p className="font-mono text-[11px] text-muted-foreground">
