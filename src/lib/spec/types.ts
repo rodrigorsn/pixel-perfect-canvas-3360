@@ -87,3 +87,11 @@ export interface Project {
   verification: VerificationItem[];
   agentsMd: string;
 }
+
+export interface CoherenceIssue {
+  title: string;
+  description: string;
+  locations: string[];
+  suggestion: string;
+  severity: "alta" | "media" | "baixa";
+}
