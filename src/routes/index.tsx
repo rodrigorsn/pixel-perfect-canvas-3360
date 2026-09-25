@@ -1,4 +1,10 @@
-import { useCallback, useMemo, useRef, useState, type PointerEvent as ReactPointerEvent } from "react";
+import {
+  useCallback,
+  useMemo,
+  useRef,
+  useState,
+  type PointerEvent as ReactPointerEvent,
+} from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { Package, RotateCcw } from "lucide-react";
 import { ChatPanel } from "@/components/spec/ChatPanel";
@@ -41,23 +47,26 @@ function Studio() {
   const [chatWidth, setChatWidth] = useState(480);
   const dragRef = useRef<{ startX: number; startWidth: number } | null>(null);
 
-  const onHandlePointerDown = useCallback((event: ReactPointerEvent<HTMLDivElement>) => {
-    event.preventDefault();
-    dragRef.current = { startX: event.clientX, startWidth: chatWidth };
-    const onMove = (move: PointerEvent) => {
-      const start = dragRef.current;
-      if (!start) return;
-      const next = start.startWidth + (move.clientX - start.startX);
-      setChatWidth(Math.min(760, Math.max(320, next)));
-    };
-    const onUp = () => {
-      dragRef.current = null;
-      window.removeEventListener("pointermove", onMove);
-      window.removeEventListener("pointerup", onUp);
-    };
-    window.addEventListener("pointermove", onMove);
-    window.addEventListener("pointerup", onUp);
-  }, [chatWidth]);
+  const onHandlePointerDown = useCallback(
+    (event: ReactPointerEvent<HTMLDivElement>) => {
+      event.preventDefault();
+      dragRef.current = { startX: event.clientX, startWidth: chatWidth };
+      const onMove = (move: PointerEvent) => {
+        const start = dragRef.current;
+        if (!start) return;
+        const next = start.startWidth + (move.clientX - start.startX);
+        setChatWidth(Math.min(760, Math.max(320, next)));
+      };
+      const onUp = () => {
+        dragRef.current = null;
+        window.removeEventListener("pointermove", onMove);
+        window.removeEventListener("pointerup", onUp);
+      };
+      window.addEventListener("pointermove", onMove);
+      window.addEventListener("pointerup", onUp);
+    },
+    [chatWidth],
+  );
 
   const state = useMemo(() => {
     if (app.activeStage === "implementacao") {
@@ -93,15 +102,21 @@ function Studio() {
         />
 
         <div className="ml-auto flex items-center gap-4">
-          <span className="font-mono text-[11px] text-muted-foreground">Etapa {stage.num} de 8</span>
+          <span className="font-mono text-[11px] text-muted-foreground">
+            Etapa {stage.num} de 8
+          </span>
           <div className="h-[5px] w-24 overflow-hidden rounded-full bg-line/40">
-            <div className="h-full rounded-full bg-accent transition-all" style={{ width: `${app.progress}%` }} />
+            <div
+              className="h-full rounded-full bg-accent transition-all"
+              style={{ width: `${app.progress}%` }}
+            />
           </div>
           <span className="font-mono text-[11px]">{app.progress}%</span>
           <button
             type="button"
             onClick={() => {
-              if (confirm("Começar um projeto novo? O projeto atual será apagado.")) app.resetProject("Novo projeto");
+              if (confirm("Começar um projeto novo? O projeto atual será apagado."))
+                app.resetProject("Novo projeto");
             }}
             className="flex items-center gap-1.5 rounded-md px-3 py-1.5 text-[12px] font-medium ring-1 ring-line hover:bg-ink/5"
           >
@@ -141,7 +156,13 @@ function Studio() {
               onRebuild={app.buildVerification}
             />
           ) : (
-            <ChatPanel stage={stage} state={state} busy={app.busy} onSend={app.sendMessage} onGenerate={app.generateDoc} />
+            <ChatPanel
+              stage={stage}
+              state={state}
+              busy={app.busy}
+              onSend={app.sendMessage}
+              onGenerate={() => app.generateDoc()}
+            />
           )}
         </div>
 
@@ -160,7 +181,7 @@ function Studio() {
           state={state}
           project={app.project}
           busy={app.busy}
-          onGenerate={app.generateDoc}
+          onGenerate={() => app.generateDoc()}
           onApprove={() => app.approveStage(app.activeStage)}
           onReopen={() => app.reopenStage(app.activeStage)}
           onDocChange={(value) => app.setDoc(app.activeStage, value)}

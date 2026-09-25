@@ -61,7 +61,7 @@ export const STAGES: StageDef[] = [
     hasChat: true,
     multi: false,
     focus:
-      "Definir stack, estrutura de pastas, modelo de dados (com diagrama mermaid erDiagram) e decisões registradas como ADRs curtos.",
+      "Definir stack, estrutura de pastas, modelo de dados (com diagrama mermaid erDiagram), diagrama de classes do domínio (com diagrama mermaid classDiagram), os comandos reais da stack escolhida e decisões registradas como ADRs curtos.",
     template: `# Arquitetura
 
 ## Stack
@@ -70,6 +70,16 @@ export const STAGES: StageDef[] = [
 \`\`\`mermaid
 erDiagram
 \`\`\`
+## Diagrama de classes
+\`\`\`mermaid
+classDiagram
+\`\`\`
+## Comandos
+- Instalar: ...
+- Rodar: ...
+- Testar: ...
+- Migrations: ...
+- Lint/build: ...
 ## Decisões (ADRs)`,
   },
   {
@@ -134,7 +144,7 @@ Uma frase.
 ## Critérios de aceite
 - [ ] ...
 ## Como verificar
-Comando ou passo manual que prova que funciona.
+Comando do teste automatizado que prova o comportamento (escrito antes da implementação, seguindo TDD). Só use passo manual quando a tarefa for puramente visual/protótipo, sem lógica a testar.
 ## Fora de escopo
 O que NÃO fazer nesta tarefa.
 ## Plano de implementação
@@ -165,3 +175,19 @@ _A ser preenchido pelo comando /plan dentro da IDE._`,
 ];
 
 export const stageById = (id: StageId) => STAGES.find((s) => s.id === id)!;
+
+/** Marca como "stale" toda etapa já concluída posterior a `fromId` — usado sempre que
+ * o conteúdo que ela depende (doc ou features de uma etapa anterior) muda. */
+export function markStagesStale<T extends { status: string; stale: boolean }>(
+  stages: Record<StageId, T>,
+  fromId: StageId,
+): Record<StageId, T> {
+  const fromNum = stageById(fromId).num;
+  const next = { ...stages };
+  STAGES.forEach((s) => {
+    if (s.num > fromNum && next[s.id].status === "concluida") {
+      next[s.id] = { ...next[s.id], stale: true };
+    }
+  });
+  return next;
+}

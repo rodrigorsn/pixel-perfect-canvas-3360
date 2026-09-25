@@ -1,5 +1,16 @@
 import { useEffect, useState } from "react";
-import { ArrowLeft, ArrowDown, ArrowUp, ChevronDown, ChevronRight, Loader2, Plus, Trash2, UnfoldVertical, FoldVertical } from "lucide-react";
+import {
+  ArrowLeft,
+  ArrowDown,
+  ArrowUp,
+  ChevronDown,
+  ChevronRight,
+  Loader2,
+  Plus,
+  Trash2,
+  UnfoldVertical,
+  FoldVertical,
+} from "lucide-react";
 import { Markdown } from "./Markdown";
 import { TelasEditor } from "./TelasEditor";
 import type { StageDef } from "@/lib/spec/stages";
@@ -50,8 +61,17 @@ export function DocumentPanel(props: Props) {
 
   const isMulti = stage.multi;
   const approved = state.status === "concluida";
+  const lastMessage = state.messages[state.messages.length - 1];
+  const interviewReady =
+    lastMessage?.role === "assistant" && /pronto para gerar o documento/i.test(lastMessage.content);
+  const needsInterview = stage.hasChat && !state.doc && !interviewReady;
 
-  const itemDoc = (): { title: string; value: string; onChange: (v: string) => void; wireframe?: string } | null => {
+  const itemDoc = (): {
+    title: string;
+    value: string;
+    onChange: (v: string) => void;
+    wireframe?: string;
+  } | null => {
     if (!selected) return null;
     if (stage.id === "tarefas") {
       const task = project.tasks.find((t) => t.code === selected);
@@ -79,7 +99,8 @@ export function DocumentPanel(props: Props) {
   };
 
   const current = itemDoc();
-  const telasFeature = stage.id === "telas" ? project.features.find((f) => f.slug === selected) : undefined;
+  const telasFeature =
+    stage.id === "telas" ? project.features.find((f) => f.slug === selected) : undefined;
   const docValue = current ? current.value : state.doc;
 
   return (
@@ -107,33 +128,48 @@ export function DocumentPanel(props: Props) {
             {value === "preview" ? "Prévia" : "Editar"}
           </button>
         ))}
-        {!current && (stage.id === "tarefas" ? project.tasks.length > 0 : (stage.id === "telas" || stage.id === "features") && project.features.length > 0) && (
-          <span className="ml-auto flex items-center gap-1">
-            <button
-              type="button"
-              title="Expandir todas"
-              onClick={() =>
-                setExpanded(
-                  stage.id === "tarefas"
-                    ? new Set(project.tasks.map((t) => t.code))
-                    : new Set(project.features.map((f) => f.slug)),
-                )
-              }
-              className="flex items-center gap-1 rounded-md px-2 py-1 text-[11px] font-medium text-muted-foreground ring-1 ring-line/60 hover:bg-ink/5"
-            >
-              <UnfoldVertical className="size-3" /> Expandir
-            </button>
-            <button
-              type="button"
-              title="Recolher todas"
-              onClick={() => setExpanded(new Set())}
-              className="flex items-center gap-1 rounded-md px-2 py-1 text-[11px] font-medium text-muted-foreground ring-1 ring-line/60 hover:bg-ink/5"
-            >
-              <FoldVertical className="size-3" /> Recolher
-            </button>
-          </span>
-        )}
-        <span className={cn("font-mono text-[10px] text-muted-foreground", !current && (stage.id === "tarefas" ? project.tasks.length > 0 : (stage.id === "telas" || stage.id === "features") && project.features.length > 0) ? "" : "ml-auto")}>{stage.docPath}</span>
+        {!current &&
+          (stage.id === "tarefas"
+            ? project.tasks.length > 0
+            : (stage.id === "telas" || stage.id === "features") && project.features.length > 0) && (
+            <span className="ml-auto flex items-center gap-1">
+              <button
+                type="button"
+                title="Expandir todas"
+                onClick={() =>
+                  setExpanded(
+                    stage.id === "tarefas"
+                      ? new Set(project.tasks.map((t) => t.code))
+                      : new Set(project.features.map((f) => f.slug)),
+                  )
+                }
+                className="flex items-center gap-1 rounded-md px-2 py-1 text-[11px] font-medium text-muted-foreground ring-1 ring-line/60 hover:bg-ink/5"
+              >
+                <UnfoldVertical className="size-3" /> Expandir
+              </button>
+              <button
+                type="button"
+                title="Recolher todas"
+                onClick={() => setExpanded(new Set())}
+                className="flex items-center gap-1 rounded-md px-2 py-1 text-[11px] font-medium text-muted-foreground ring-1 ring-line/60 hover:bg-ink/5"
+              >
+                <FoldVertical className="size-3" /> Recolher
+              </button>
+            </span>
+          )}
+        <span
+          className={cn(
+            "font-mono text-[10px] text-muted-foreground",
+            !current &&
+              (stage.id === "tarefas"
+                ? project.tasks.length > 0
+                : (stage.id === "telas" || stage.id === "features") && project.features.length > 0)
+              ? ""
+              : "ml-auto",
+          )}
+        >
+          {stage.docPath}
+        </span>
       </div>
 
       <div className="min-h-0 flex-1 overflow-y-auto p-4">
@@ -169,7 +205,9 @@ export function DocumentPanel(props: Props) {
         ) : tab === "editar" ? (
           <textarea
             value={docValue}
-            onChange={(event) => (current ? current.onChange(event.target.value) : props.onDocChange(event.target.value))}
+            onChange={(event) =>
+              current ? current.onChange(event.target.value) : props.onDocChange(event.target.value)
+            }
             spellCheck={false}
             className="h-full min-h-[420px] w-full resize-none rounded-md bg-panel/70 p-3 font-mono text-[11.5px] leading-relaxed outline-none ring-1 ring-line/60 focus:ring-accent"
             placeholder="O markdown do documento aparece aqui."
@@ -208,40 +246,55 @@ export function DocumentPanel(props: Props) {
         )}
       </div>
 
-      <div className="flex flex-none gap-2 border-t border-line/40 p-3">
-        <button
-          type="button"
-          disabled={!!busy}
-          onClick={props.onGenerate}
-          className={
-            (() => {
-              const last = state.messages[state.messages.length - 1];
-              return last?.role === "assistant" && /pronto para gerar o documento/i.test(last.content);
-            })()
-              ? "flex-1 rounded-md bg-accent px-3 py-1.5 text-[12px] font-medium text-accent-foreground ring-2 ring-accent/60 disabled:opacity-50"
-              : "flex-1 rounded-md px-3 py-1.5 text-[12px] font-medium ring-1 ring-line hover:bg-ink/5 disabled:opacity-50"
-          }
-        >
-          {busy ? <Loader2 className="mx-auto size-3.5 animate-spin" /> : state.doc ? "Regerar" : "Gerar documento"}
-        </button>
-        {approved ? (
-          <button
-            type="button"
-            onClick={props.onReopen}
-            className="flex-1 rounded-md px-3 py-1.5 text-[12px] font-medium ring-1 ring-line hover:bg-ink/5"
-          >
-            Reabrir etapa
-          </button>
-        ) : (
-          <button
-            type="button"
-            disabled={!state.doc}
-            onClick={props.onApprove}
-            className="flex-1 rounded-md bg-green px-3 py-1.5 text-[12px] font-medium text-ink-foreground disabled:opacity-40"
-          >
-            Aprovar etapa
-          </button>
+      <div className="flex flex-none flex-col gap-1.5 border-t border-line/40 p-3">
+        {needsInterview && (
+          <p className="font-mono text-[10px] text-muted-foreground">
+            Converse com o arquiteto até ele dizer que está pronto para gerar.
+          </p>
         )}
+        <div className="flex gap-2">
+          <button
+            type="button"
+            disabled={!!busy || needsInterview}
+            title={
+              needsInterview
+                ? "Continue a conversa com o arquiteto antes de gerar o documento."
+                : undefined
+            }
+            onClick={props.onGenerate}
+            className={
+              interviewReady
+                ? "flex-1 rounded-md bg-accent px-3 py-1.5 text-[12px] font-medium text-accent-foreground ring-2 ring-accent/60 disabled:opacity-50"
+                : "flex-1 rounded-md px-3 py-1.5 text-[12px] font-medium ring-1 ring-line hover:bg-ink/5 disabled:opacity-50"
+            }
+          >
+            {busy ? (
+              <Loader2 className="mx-auto size-3.5 animate-spin" />
+            ) : state.doc ? (
+              "Regerar"
+            ) : (
+              "Gerar documento"
+            )}
+          </button>
+          {approved ? (
+            <button
+              type="button"
+              onClick={props.onReopen}
+              className="flex-1 rounded-md px-3 py-1.5 text-[12px] font-medium ring-1 ring-line hover:bg-ink/5"
+            >
+              Reabrir etapa
+            </button>
+          ) : (
+            <button
+              type="button"
+              disabled={!state.doc}
+              onClick={props.onApprove}
+              className="flex-1 rounded-md bg-green px-3 py-1.5 text-[12px] font-medium text-ink-foreground disabled:opacity-40"
+            >
+              Aprovar etapa
+            </button>
+          )}
+        </div>
       </div>
     </section>
   );
@@ -276,7 +329,9 @@ function ItemList({
 }) {
   if (stage.id === "tarefas") {
     if (!project.tasks.length) {
-      return <p className="font-mono text-[11px] text-muted-foreground">Nenhuma tarefa gerada ainda.</p>;
+      return (
+        <p className="font-mono text-[11px] text-muted-foreground">Nenhuma tarefa gerada ainda.</p>
+      );
     }
     return (
       <div className="flex flex-col gap-3">
@@ -309,7 +364,11 @@ function ItemList({
                           onClick={() => onToggleTask(task.code)}
                           className="flex-none rounded p-1.5 text-muted-foreground hover:bg-ink/5"
                         >
-                          {isOpen ? <ChevronDown className="size-3.5" /> : <ChevronRight className="size-3.5" />}
+                          {isOpen ? (
+                            <ChevronDown className="size-3.5" />
+                          ) : (
+                            <ChevronRight className="size-3.5" />
+                          )}
                         </button>
                         <button
                           type="button"
@@ -320,7 +379,9 @@ function ItemList({
                           <span>{task.title}</span>
                           <span className="mt-0.5 block font-mono text-[10px] text-muted-foreground">
                             {task.kind === "prototype" ? "protótipo" : "funcional"}
-                            {task.dependsOn.length ? ` · depende de ${task.dependsOn.join(", ")}` : ""}
+                            {task.dependsOn.length
+                              ? ` · depende de ${task.dependsOn.join(", ")}`
+                              : ""}
                           </span>
                         </button>
                       </div>
@@ -349,9 +410,13 @@ function ItemList({
       )}
       <ul className="flex flex-col gap-1">
         {project.features.map((feature, index) => {
-          const isOpen = (stage.id === "telas" || stage.id === "features") && expanded.has(feature.slug);
+          const isOpen =
+            (stage.id === "telas" || stage.id === "features") && expanded.has(feature.slug);
           return (
-            <li key={feature.slug} className={cn("rounded-md ring-1 ring-line/50", isOpen && "flex flex-col")}>
+            <li
+              key={feature.slug}
+              className={cn("rounded-md ring-1 ring-line/50", isOpen && "flex flex-col")}
+            >
               <div className="flex items-center gap-1">
                 {(stage.id === "telas" || stage.id === "features") && (
                   <button
@@ -360,7 +425,11 @@ function ItemList({
                     onClick={() => onToggleTask(feature.slug)}
                     className="flex-none rounded p-1.5 text-muted-foreground hover:bg-ink/5"
                   >
-                    {isOpen ? <ChevronDown className="size-3.5" /> : <ChevronRight className="size-3.5" />}
+                    {isOpen ? (
+                      <ChevronDown className="size-3.5" />
+                    ) : (
+                      <ChevronRight className="size-3.5" />
+                    )}
                   </button>
                 )}
                 <button
@@ -382,13 +451,25 @@ function ItemList({
                 </button>
                 {stage.id === "features" && (
                   <div className="flex flex-none items-center gap-0.5 pr-1">
-                    <button type="button" onClick={() => onFeatureMove(feature.slug, -1)} className="rounded p-1 text-muted-foreground hover:bg-ink/5">
+                    <button
+                      type="button"
+                      onClick={() => onFeatureMove(feature.slug, -1)}
+                      className="rounded p-1 text-muted-foreground hover:bg-ink/5"
+                    >
                       <ArrowUp className="size-3" />
                     </button>
-                    <button type="button" onClick={() => onFeatureMove(feature.slug, 1)} className="rounded p-1 text-muted-foreground hover:bg-ink/5">
+                    <button
+                      type="button"
+                      onClick={() => onFeatureMove(feature.slug, 1)}
+                      className="rounded p-1 text-muted-foreground hover:bg-ink/5"
+                    >
                       <ArrowDown className="size-3" />
                     </button>
-                    <button type="button" onClick={() => onFeatureRemove(feature.slug)} className="rounded p-1 text-muted-foreground hover:bg-ink/5">
+                    <button
+                      type="button"
+                      onClick={() => onFeatureRemove(feature.slug)}
+                      className="rounded p-1 text-muted-foreground hover:bg-ink/5"
+                    >
                       <Trash2 className="size-3" />
                     </button>
                   </div>
@@ -401,7 +482,8 @@ function ItemList({
                       <Markdown content={feature.spec} />
                     ) : (
                       <p className="font-mono text-[11px] text-muted-foreground">
-                        {feature.description || "Spec ainda não gerada. Clique em “Gerar documento”."}
+                        {feature.description ||
+                          "Spec ainda não gerada. Clique em “Gerar documento”."}
                       </p>
                     )
                   ) : feature.telas ? (

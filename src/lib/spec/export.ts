@@ -1,11 +1,13 @@
-import { featureFolder } from "./storage";
+import { featureFolder, slugify } from "./storage";
 import type { Project } from "./types";
 import { pageFileName } from "./pages";
 
 export function buildFileMap(project: Project): Record<string, string> {
   const files: Record<string, string> = {};
 
-  files["AGENTS.md"] = project.agentsMd.trim() ? project.agentsMd : `# ${project.name} — Constituição do projeto
+  files["AGENTS.md"] = project.agentsMd.trim()
+    ? project.agentsMd
+    : `# ${project.name} — Constituição do projeto
 
 ## Resumo do produto
 ${section(project.stages.brainstorm.doc, "## Ideia") || project.stages.brainstorm.doc || "Ver docs/00-brainstorm.md"}
@@ -27,9 +29,7 @@ ${section(project.stages.arquitetura.doc, "## Estrutura de pastas") || ""}
 - Nenhuma tarefa marca outra tarefa como concluída.
 
 ## Comandos
-- Instalar: \`npm install\`
-- Rodar: \`npm run dev\`
-- Testar: \`npm test\`
+${section(project.stages.arquitetura.doc, "## Comandos") || "Use os comandos reais da stack definida em docs/02-arquitetura.md — não assuma npm/yarn/pnpm sem checar o package.json ou equivalente."}
 
 ## Fluxo de trabalho
 ${WORKFLOW_TEXT}
@@ -57,18 +57,25 @@ Siga integralmente as regras definidas em AGENTS.md na raiz do repositório.
 
 **Etapa atual:** ${currentStage}
 
-${statusSection("## Leva 1 — Protótipo visual", project.tasks.filter((t) => t.kind === "prototype"))}
+${statusSection(
+  "## Leva 1 — Protótipo visual",
+  project.tasks.filter((t) => t.kind === "prototype"),
+)}
 
-${statusSection("## Leva 2 — Funcional", project.tasks.filter((t) => t.kind !== "prototype"))}
+${statusSection(
+  "## Leva 2 — Funcional",
+  project.tasks.filter((t) => t.kind !== "prototype"),
+)}
 `;
 
   if (project.stages.brainstorm.doc) files["docs/00-brainstorm.md"] = project.stages.brainstorm.doc;
   if (project.stages.prd.doc) files["docs/01-prd.md"] = project.stages.prd.doc;
-  if (project.stages.arquitetura.doc) files["docs/02-arquitetura.md"] = project.stages.arquitetura.doc;
+  if (project.stages.arquitetura.doc)
+    files["docs/02-arquitetura.md"] = project.stages.arquitetura.doc;
 
   project.adrs.forEach((adr) => {
     const n = String(adr.number).padStart(4, "0");
-    files[`docs/adr/${n}-${adr.title.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "")}.md`] =
+    files[`docs/adr/${n}-${slugify(adr.title)}.md`] =
       `# ADR-${n} — ${adr.title}\n\n${adr.content}\n`;
   });
 
@@ -177,7 +184,9 @@ export function acceptanceCriteria(markdown: string) {
 
 function statusSection(heading: string, tasks: Project["tasks"]) {
   const lines = tasks.length
-    ? tasks.map((t) => `- [${t.done ? "x" : " "}] ${t.code} — ${t.title} (${t.featureSlug})`).join("\n")
+    ? tasks
+        .map((t) => `- [${t.done ? "x" : " "}] ${t.code} — ${t.title} (${t.featureSlug})`)
+        .join("\n")
     : "- [ ] Nenhuma tarefa gerada";
   return `${heading}\n${lines}`;
 }
@@ -196,7 +205,7 @@ Tarefa: $ARGUMENTS
 1. Leia AGENTS.md, o arquivo da tarefa em docs/tasks/ e a spec e o telas.md da feature referenciada.
 2. Pesquise no código existente: implementações parecidas, componentes, hooks e utilitários que podem ser reutilizados, e os padrões já usados. Não recrie o que já existe.
 3. Se a tarefa usar biblioteca ou API externa, consulte a documentação oficial atual antes de planejar.
-4. NÃO escreva código. Preencha a seção "## Plano de implementação" do arquivo da tarefa com: arquivos a criar (caminho + conteúdo), arquivos a modificar (caminho + o que muda), o que reutilizar, cenários (caminho feliz, borda, erro), mudanças no banco, dependências novas (com justificativa) e testes a escrever.
+4. NÃO escreva código. Preencha a seção "## Plano de implementação" do arquivo da tarefa com: arquivos a criar (caminho + responsabilidade do arquivo, sem conteúdo), arquivos a modificar (caminho + o que muda), o que reutilizar, cenários (caminho feliz, borda, erro), mudanças no banco, dependências novas (com justificativa) e a lista de testes a escrever — um por comportamento da seção "Ação → Resultado esperado" e por critério de aceite, cada um com o nome do teste e o que ele prova.
 5. Mostre o plano e pare para revisão.
 `;
 
@@ -206,12 +215,14 @@ argument-hint: [código da tarefa, ex: T003]
 ---
 Tarefa: $ARGUMENTS
 1. Leia AGENTS.md e o arquivo da tarefa. Se a seção "Plano de implementação" ainda estiver com o texto padrão, pare e peça para rodar /plan primeiro.
-2. Crie a branch task/$ARGUMENTS.
-3. Implemente seguindo estritamente o plano, tocando apenas nos arquivos listados.
-4. Escreva e rode os testes do plano e a verificação da seção "Como verificar".
-5. Marque a tarefa como concluída em STATUS.md, faça o commit, resuma o que foi feito e pare.
+2. Parta da main atualizada e crie a branch task/$ARGUMENTS.
+3. Siga TDD (red-green-refactor) para cada item da lista de testes do plano: escreva o teste, rode e confirme que falha pelo motivo certo (não por erro de digitação), só então escreva o mínimo de código para fazer passar. Nunca escreva código de implementação antes do teste correspondente existir e falhar.
+4. Repita o passo 3 até cobrir todos os comportamentos da tarefa. Depois, rode a suíte inteira e a verificação da seção "Como verificar" — todos os critérios de aceite devem estar satisfeitos com evidência (saída do teste), não por inspeção visual.
+5. Marque a tarefa como concluída em STATUS.md, faça o commit, resuma o que foi feito (incluindo quais testes foram escritos), abra um PR contra a main e pare para revisão — nunca dê merge sozinho.
 `;
 
 function toWorkflowDoc(cmd: string) {
-  return cmd.replace(/^---[\s\S]*?---\n/, "").replaceAll("$ARGUMENTS", "a tarefa indicada");
+  return cmd
+    .replace(/^---[\s\S]*?---\n/, "")
+    .replaceAll("$ARGUMENTS", "<código da tarefa, ex.: T003>");
 }

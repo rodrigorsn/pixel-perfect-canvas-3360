@@ -59,8 +59,12 @@ export function ChatPanel({ stage, state, busy, onSend, onGenerate }: Props) {
       <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto p-4">
         {state.messages.length === 0 && (
           <div className="rounded-[9px] bg-panel/50 px-3 py-2 text-[13px] leading-relaxed ring-1 ring-black/5">
-            <span className="mb-1 block font-mono text-[10px] text-muted-foreground">arquiteto</span>
-            Conte o que você quer construir. Vou fazer uma pergunta por vez para fechar a etapa “{stage.title}”.
+            <span className="mb-1 block font-mono text-[10px] text-muted-foreground">
+              arquiteto
+            </span>
+            {state.doc
+              ? `Já gerei um rascunho de "${stage.title}" com base nas etapas anteriores. Converse comigo pra ajustar algo, ou aprove se já estiver bom.`
+              : `Conte o que você quer construir. Vou fazer uma pergunta por vez para fechar a etapa "${stage.title}".`}
           </div>
         )}
 
@@ -81,7 +85,9 @@ export function ChatPanel({ stage, state, busy, onSend, onGenerate }: Props) {
               </span>
               {body}
               {hint && (
-                <span className="mt-2 block font-mono text-[11px] text-accent">sugestão: {hint}</span>
+                <span className="mt-2 block font-mono text-[11px] text-accent">
+                  sugestão: {hint}
+                </span>
               )}
             </div>
           );
