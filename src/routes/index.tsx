@@ -8,6 +8,7 @@ import {
 import { createFileRoute } from "@tanstack/react-router";
 import { Package, RotateCcw } from "lucide-react";
 import { ChatPanel } from "@/components/spec/ChatPanel";
+import { CoherenceModal } from "@/components/spec/CoherenceModal";
 import { DocumentPanel } from "@/components/spec/DocumentPanel";
 import { ExportDialog } from "@/components/spec/ExportDialog";
 import { ImplementationPanel, VerificationPanel } from "@/components/spec/TrackerPanels";
@@ -182,7 +183,7 @@ function Studio() {
           project={app.project}
           busy={app.busy}
           onGenerate={() => app.generateDoc()}
-          onApprove={() => app.approveStage(app.activeStage)}
+          onApprove={() => app.checkAndApprove(app.activeStage)}
           onReopen={() => app.reopenStage(app.activeStage)}
           onDocChange={(value) => app.setDoc(app.activeStage, value)}
           onFeatureChange={app.updateFeature}
@@ -202,6 +203,12 @@ function Studio() {
         busy={app.busy}
         onGenerateAgents={app.generateAgentsMd}
         onAgentsChange={app.setAgentsMd}
+      />
+
+      <CoherenceModal
+        issues={app.coherenceIssues?.issues ?? null}
+        onCancel={app.dismissCoherence}
+        onApproveAnyway={app.approveDespiteCoherence}
       />
     </div>
   );

@@ -287,11 +287,11 @@ export function DocumentPanel(props: Props) {
           ) : (
             <button
               type="button"
-              disabled={!state.doc}
+              disabled={!state.doc || !!busy}
               onClick={props.onApprove}
               className="flex-1 rounded-md bg-green px-3 py-1.5 text-[12px] font-medium text-ink-foreground disabled:opacity-40"
             >
-              Aprovar etapa
+              {busy ? <Loader2 className="mx-auto size-3.5 animate-spin" /> : "Aprovar etapa"}
             </button>
           )}
         </div>
