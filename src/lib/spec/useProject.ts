@@ -495,7 +495,8 @@ ${approvedContext(project, "implementacao")}`;
 
   const checkAndApprove = useCallback(
     async (id: StageId) => {
-      if (stageById(id).num === 1) {
+      const stage = stageById(id);
+      if (!stage.hasChat || stage.num === 1) {
         approveStage(id);
         return;
       }
