@@ -207,6 +207,7 @@ function Studio() {
 
       <CoherenceModal
         issues={app.coherenceIssues?.issues ?? null}
+        stageName={app.coherenceIssues ? stageById(app.coherenceIssues.stageId).title : null}
         onCancel={app.dismissCoherence}
         onApproveAnyway={app.approveDespiteCoherence}
       />

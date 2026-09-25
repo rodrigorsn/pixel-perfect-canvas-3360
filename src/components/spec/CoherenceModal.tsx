@@ -29,10 +29,12 @@ const SEVERITY_COLOR: Record<CoherenceIssue["severity"], string> = {
 
 export function CoherenceModal({
   issues,
+  stageName,
   onCancel,
   onApproveAnyway,
 }: {
   issues: CoherenceIssue[] | null;
+  stageName: string | null;
   onCancel: () => void;
   onApproveAnyway: () => void;
 }) {
@@ -45,7 +47,7 @@ export function CoherenceModal({
       <DialogContent className="max-w-[640px] gap-4 bg-panel">
         <DialogHeader>
           <DialogTitle className="font-display text-[14px]">
-            Contradições encontradas entre os documentos
+            Contradições encontradas — {stageName ?? "etapa"}
           </DialogTitle>
         </DialogHeader>
 
