@@ -5,6 +5,7 @@ import { aiJson, aiText } from "../ai.functions";
 import { markStagesStale, STAGES, stageById } from "./stages";
 import {
   approvedContext,
+  coherenceReviewSystem,
   docSystem,
   gapReviewSystem,
   interviewSystem,
@@ -14,13 +15,17 @@ import { emptyProject, loadProject, saveProject, slugify } from "./storage";
 import { WORKFLOW_TEXT, acceptanceCriteria, parseStatusMd } from "./export";
 import { newId, pagesForPrompt, withPages } from "./pages";
 import { preserveDone, renumberTasks, tasksFromAi, type AiTask } from "./tasks";
-import type { Feature, Page, Project, StageId, Task } from "./types";
+import type { CoherenceIssue, Feature, Page, Project, StageId, Task } from "./types";
 
 export function useProject() {
   const [project, setProject] = useState<Project>(() => emptyProject());
   const [hydrated, setHydrated] = useState(false);
   const [activeStage, setActiveStage] = useState<StageId>("brainstorm");
   const [busy, setBusy] = useState<string | null>(null);
+  const [coherenceIssues, setCoherenceIssues] = useState<{
+    stageId: StageId;
+    issues: CoherenceIssue[];
+  } | null>(null);
 
   const callText = useServerFn(aiText);
   const callJson = useServerFn(aiJson);
@@ -488,6 +493,44 @@ ${approvedContext(project, "implementacao")}`;
     toast.success("Etapa aprovada.");
   }, []);
 
+  const checkAndApprove = useCallback(
+    async (id: StageId) => {
+      if (stageById(id).num === 1) {
+        approveStage(id);
+        return;
+      }
+      setBusy("Verificando coerência…");
+      try {
+        const res = parseJson(
+          await callJson({
+            data: {
+              kind: "coerencia",
+              system: coherenceReviewSystem(project, id),
+              prompt: "Verifique a coerência de todo o conteúdo listado no system prompt.",
+            },
+          }),
+        ) as { issues: CoherenceIssue[] };
+        if (res.issues.length === 0) {
+          approveStage(id);
+        } else {
+          setCoherenceIssues({ stageId: id, issues: res.issues });
+        }
+      } catch (error) {
+        toast.error(errorMessage(error));
+      } finally {
+        setBusy(null);
+      }
+    },
+    [project, callJson, approveStage],
+  );
+
+  const dismissCoherence = useCallback(() => setCoherenceIssues(null), []);
+
+  const approveDespiteCoherence = useCallback(() => {
+    if (coherenceIssues) approveStage(coherenceIssues.stageId);
+    setCoherenceIssues(null);
+  }, [coherenceIssues, approveStage]);
+
   const reopenStage = useCallback((id: StageId) => {
     setProject((p) => ({
       ...p,
@@ -590,6 +633,10 @@ ${approvedContext(project, "implementacao")}`;
     generateAgentsMd,
     setAgentsMd,
     approveStage,
+    checkAndApprove,
+    coherenceIssues,
+    dismissCoherence,
+    approveDespiteCoherence,
     reopenStage,
     setDoc,
     updateFeature,
