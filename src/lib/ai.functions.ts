@@ -1,7 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { Output, streamText } from "ai";
 import { z } from "zod";
-import { MODEL_ID, RESPONSES_OPTIONS, createResponsesProvider } from "./ai-gateway.server";
+import { MODEL_ID, createDeepSeekProvider } from "./ai-gateway.server";
 
 const MessageSchema = z.object({
   role: z.enum(["user", "assistant"]),
@@ -16,12 +16,11 @@ const TextInput = z.object({
 export const aiText = createServerFn({ method: "POST" })
   .inputValidator((input: unknown) => TextInput.parse(input))
   .handler(async ({ data }) => {
-    const lovable = createResponsesProvider();
+    const deepseek = createDeepSeekProvider();
     const result = streamText({
-      model: lovable.responses(MODEL_ID),
+      model: deepseek(MODEL_ID),
       system: data.system,
       messages: data.messages,
-      providerOptions: RESPONSES_OPTIONS,
     });
     const text = await result.text;
     return { text: text.trim() };
@@ -82,12 +81,23 @@ const schemas = {
     ),
   }),
   wireframe: z.object({ html: z.string() }),
+  coerencia: z.object({
+    issues: z.array(
+      z.object({
+        title: z.string(),
+        description: z.string(),
+        locations: z.array(z.string()),
+        suggestion: z.string(),
+        severity: z.enum(["alta", "media", "baixa"]),
+      }),
+    ),
+  }),
 } as const;
 
 export type AiJsonKind = keyof typeof schemas;
 
 const JsonInput = z.object({
-  kind: z.enum(["features", "tasks", "arquitetura", "telas", "wireframe"]),
+  kind: z.enum(["features", "tasks", "arquitetura", "telas", "wireframe", "coerencia"]),
   system: z.string(),
   prompt: z.string(),
 });
@@ -95,14 +105,13 @@ const JsonInput = z.object({
 export const aiJson = createServerFn({ method: "POST" })
   .inputValidator((input: unknown) => JsonInput.parse(input))
   .handler(async ({ data }) => {
-    const lovable = createResponsesProvider();
+    const deepseek = createDeepSeekProvider();
     const schema = schemas[data.kind] as unknown as z.ZodType<Record<string, unknown>>;
     const result = streamText({
-      model: lovable.responses(MODEL_ID),
+      model: deepseek(MODEL_ID),
       system: data.system,
       prompt: data.prompt,
       output: Output.object({ schema }),
-      providerOptions: RESPONSES_OPTIONS,
     });
     return { json: JSON.stringify(await result.output) };
   });
