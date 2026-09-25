@@ -64,6 +64,7 @@ export function tasksContext(project: Project): string {
 export function coherenceReviewSystem(project: Project, stageId: StageId) {
   const stage = stageById(stageId);
   const index = STAGES.findIndex((s) => s.id === stageId);
+  // Seguro: só chamada para etapas com uma etapa seguinte (prd..tarefas nunca é a última).
   const next = STAGES[index + 1]!;
   const context =
     approvedContext(project, next.id) + (stageId === "tarefas" ? tasksContext(project) : "");
