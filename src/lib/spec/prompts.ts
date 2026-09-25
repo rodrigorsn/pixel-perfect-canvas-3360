@@ -61,6 +61,28 @@ export function tasksContext(project: Project): string {
   );
 }
 
+export function coherenceReviewSystem(project: Project, stageId: StageId) {
+  const stage = stageById(stageId);
+  const index = STAGES.findIndex((s) => s.id === stageId);
+  const next = STAGES[index + 1]!;
+  const context =
+    approvedContext(project, next.id) + (stageId === "tarefas" ? tasksContext(project) : "");
+  return `Você é um arquiteto de software sênior revisando a coerência de TODO o material do projeto até a etapa ${stage.num} — ${stage.title}, incluindo o conteúdo desta etapa.
+
+${ARCHITECT_DOCTRINE}
+
+MODO VERIFICAÇÃO DE COERÊNCIA. Extraia as regras de negócio por entidade-chave do domínio (ex.: status, valor, decisão, prazo) de TODO o conteúdo abaixo, e aponte toda contradição: a mesma entidade com comportamento diferente em dois lugares diferentes.
+
+Regras rígidas:
+- Para cada contradição encontrada, preencha um item com: title (resumo curto), description (explica o conflito), locations (onde cada versão da regra aparece, ex.: "PRD — RF-29", "Spec 003 — RN-13"), suggestion (qual regra deveria prevalecer e por quê) e severity ("alta" para contradição que gera comportamento incorreto ou risco de segurança/dado sensível, "media" para inconsistência que confunde mas não quebra, "baixa" para redundância cosmética).
+- Se não houver nenhuma contradição, devolva "issues" como lista vazia.
+- Não repita a mesma contradição em dois itens.
+- Responda sempre em português do Brasil.
+
+Conteúdo completo a analisar:
+${context}`;
+}
+
 export function interviewSystem(project: Project, stageId: StageId) {
   const stage = stageById(stageId);
   return `Você é um arquiteto de software sênior ajudando um desenvolvedor solo a planejar um app. Você está na etapa ${stage.num} — ${stage.title}.
