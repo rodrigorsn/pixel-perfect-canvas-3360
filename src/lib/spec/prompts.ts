@@ -53,6 +53,14 @@ export function approvedContext(project: Project, upTo: StageId): string {
   return parts.join("\n");
 }
 
+export function tasksContext(project: Project): string {
+  if (!project.tasks.length) return "";
+  return (
+    "\n---\n# Tarefas\n" +
+    project.tasks.map((t) => `## ${t.code} — ${t.title}\n${t.markdown}`).join("\n\n")
+  );
+}
+
 export function interviewSystem(project: Project, stageId: StageId) {
   const stage = stageById(stageId);
   return `Você é um arquiteto de software sênior ajudando um desenvolvedor solo a planejar um app. Você está na etapa ${stage.num} — ${stage.title}.
